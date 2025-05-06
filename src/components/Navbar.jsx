@@ -10,7 +10,7 @@ const Logo = () => {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(window.location.href)
+        navigator.clipboard.writeText("https://bachansingh.netlify.app/")
             .then(() => {
                 setCopied(true);
             })
