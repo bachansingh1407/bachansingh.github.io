@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Montserrat", sans-serif;
+  scroll-behavior: smooth;
+}
+
+ul {
+  list-style: none;
+}
+
+a {
+  text-decoration: none;
+}
+
+body {
+  background-color: #222831;
+  color: #fff;
+}
+
+/* Common Classes */
+.container {
+  max-width: 90%;
+  margin: auto;
+  padding: 2rem 1rem;
+}
+
+/* Title Section */
+.container .content_title {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 4rem 0 2rem;
+}
+
+.content_title h1 {
+  font-size: 3.5rem;
+  color: #FCFFC1;
+}
+
+.content_title p {
+  letter-spacing: 1.2px;
+  font-size: 1rem;
+  max-width: 700px;
+  margin: auto;
+  line-height: 1.6;
+}
+
+/* Projects Grid */
+/* Default: Mobile First (1 column) */
+.all_content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-bottom: 4rem;
+}
+
+/* Large screens (≥1024px): 2 columns */
+@media (min-width: 1024px) {
+  .all_content {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Small Screen */
+@media (max-width:768px) {
+  .container .content_title{
+    margin: 2rem 0 2rem;
+
+  }
+  .content_title h1{
+    font-size: 2rem;
+  }
+  .content_title p{
+    font-size: 0.8rem;
+  }
+  
+}

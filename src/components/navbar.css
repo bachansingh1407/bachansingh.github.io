@@ -1,0 +1,54 @@
+.navbar_container{
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem;
+}
+.navbar_container .menu,
+.logo{
+    /* cursor: pointer; */
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    background-color: #fff;
+    position: relative;
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
+}
+.navbar_container .menu .menu_list{
+    position: absolute;
+    top: 2.6rem;
+    right: 0.5rem;
+    background-color: #fff;
+    padding: 1rem;
+    border-radius: 4px;
+    display: flex;
+    /* align-items: center; */
+    justify-content: center;
+    flex-direction: column;
+    gap:0.5rem;
+    z-index: 1000;
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
+}
+
+.menu_list li a{
+    font-size: 0.8rem;
+    color:#000;
+}
+.menu a,
+.logo a{
+    font-size: 1.1rem;
+    color: #000;
+}
+.menu button,
+.logo button{
+    background: none;
+    border: none;
+    color: #000;
+    display: flex;
+    align-items: center;
+    font-size: 1.2rem;
+}
+.logo button{
+    color: #7f7f97;
+}

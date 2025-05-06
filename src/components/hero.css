@@ -1,0 +1,156 @@
+.hero_container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 4rem;
+    height: calc(100vh - 15vh);
+    position: relative;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.hero_content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 50%;
+    text-align: justify;
+    align-items: flex-start;
+}
+
+.hero_content h1 {
+    text-transform: uppercase;
+    font-size: 4rem;
+    color: rgb(85, 201, 85);
+}
+
+.hero_content span {
+    display: block;
+    margin-left: 4rem;
+    color: #fff;
+}
+.hero_content p{
+    letter-spacing: 2px;
+}
+.hero_content button {
+    padding: 0.8rem 1rem;
+    border-radius: 2px;
+    border: 1px solid rgb(46, 110, 46);
+    font-size: 1rem;
+    letter-spacing: 2px;
+    background-color: rgb(46, 110, 46);
+    color: #fff;
+    cursor: pointer;
+}
+
+.hero_image {
+    display: grid;
+    place-items: center;
+    max-width: 40%;
+}
+
+.hero_image img {
+    max-width: 80%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 4px, rgba(0, 0, 0, 0.3) 0px 7px 13px -3px, rgba(0, 0, 0, 0.2) 0px -3px 0px inset;
+}
+
+.social_links {
+    position: absolute;
+    right: 2rem;
+    bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.social_links a {
+    color: #fff;
+    font-size: 2rem;
+    padding: 0.5rem 0.8rem;
+    position: relative;
+    /* background-color: #333; */
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px inset;
+}
+
+.social_links a span {
+    position: absolute;
+    top: 1rem;
+    right: 3rem;
+    display: none;
+    background-color: #fff;
+    color: #000;
+    font-size: 0.8rem;
+    padding: 6px 8px;
+    border-radius: 4px;
+}
+
+.social_links a:hover span {
+    display: block;
+}
+
+/* 📱 Medium screens: tablets (<= 1080px) */
+@media (max-width: 1080px) {
+    .hero_container {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 2rem;
+        height: auto;
+    }
+
+    .hero_content {
+        max-width: 100%;
+        align-items: center;
+        text-align: center;
+    }
+
+    .hero_content h1 {
+        font-size: 3rem;
+    }
+
+    .hero_content span {
+        margin-left: 0;
+    }
+
+    .hero_image {
+        max-width: 80%;
+    }
+
+    .social_links {
+        position: static;
+        flex-direction: row;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+
+    .social_links a span {
+        display: none; /* hide tooltip on smaller screens */
+    }
+}
+
+/* 📱 Small screens: phones (<= 600px) */
+@media (max-width: 600px) {
+    .hero_content h1 {
+        font-size: 2.5rem;
+    }
+
+    .hero_content p {
+        font-size: 0.9rem;
+    }
+
+    .hero_content button {
+        font-size: 0.9rem;
+        padding: 0.6rem 0.9rem;
+    }
+
+    .hero_image {
+        max-width: 100%;
+    }
+
+    .social_links {
+        flex-wrap: wrap;
+    }
+}

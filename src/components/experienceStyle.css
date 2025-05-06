@@ -1,0 +1,133 @@
+.experience_card {
+    width: 100%;
+    padding: 1.5rem 1.25rem;
+    background-color: #333436;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    margin-bottom: 2rem;
+    color: #fff;
+    box-sizing: border-box;
+  }
+  
+  .experience_header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .experience_title h2 {
+    font-size: 1.2rem;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+  
+  .experience_title h2 span {
+    font-weight: 400;
+    margin-left: 0.5rem;
+    font-size: 0.9rem;
+    color: #ccc;
+  }
+  
+  .experience_title strong {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #ddd;
+  }
+  
+  .experience_duration {
+    font-size: 0.9rem;
+    color: #aaa;
+    align-self: flex-end;
+  }
+  
+  .experience_desc,
+  .experience_highlights {
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+    line-height: 1.6;
+    text-align: justify;
+    margin: 1rem 0;
+  }
+  
+  .experience_techstack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .tech_item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.9rem;
+    background: #f5f5f5;
+    color: #000;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, background 0.3s ease;
+    font-size: 0.85rem;
+  }
+  
+  .tech_item:hover {
+    background: #e0e0e0;
+    transform: translateY(-3px);
+  }
+  
+  .experience_highlights li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  /* === Responsive Styling === */
+  @media screen and (min-width: 600px) {
+    .experience_header {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+  
+    .experience_title {
+      flex: 1;
+    }
+  
+    .experience_title h2 {
+      font-size: 1.4rem;
+    }
+  
+    .experience_duration {
+      font-size: 1rem;
+    }
+  
+    .tech_item {
+      font-size: 0.95rem;
+    }
+  
+    .experience_desc {
+      font-size: 1rem;
+    }
+  }
+  
+  @media screen and (min-width: 1024px) {
+    .experience_card {
+      padding: 2rem;
+    }
+  
+    .experience_title h2 {
+      font-size: 1.6rem;
+    }
+  
+    .experience_title strong {
+      font-size: 1.1rem;
+    }
+  
+    .experience_desc,
+    .experience_highlights {
+      font-size: 1rem;
+    }
+  }
+  
