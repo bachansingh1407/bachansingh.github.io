@@ -1,9 +1,10 @@
 import React from "react";
 import ProjectCard from "../components/ProjectCard";
-import doShareCover from "../assets/doshare.png"; // replace with actual path
-import blogAppCover from "../assets/blogs.png"; // replace with actual path
-import hrDashboardCover from "../assets/hrproject.png"; // replace with actual path
-import jwtCover from "../assets/authproject.png"; // replace with actual path
+import doShareCover from "../assets/doshare.png";
+import eCommerceCover from "../assets/ecommerce.png";
+import blogAppCover from "../assets/blogs.png";
+import hrDashboardCover from "../assets/hrproject.png";
+import jwtCover from "../assets/authproject.png";
 
 const Projects = () => {
   const projectDetails = [
@@ -28,6 +29,29 @@ const Projects = () => {
       ],
       github_url:
         "https://github.com/bachankapoor/DoShare-File-Sharing-and-managing-web-application",
+    },
+    {
+      title: "E-commerce Platform using MERN Stack",
+      cover_image: eCommerceCover,
+      description: [
+        `This is a feature-rich e-commerce frontend application built with React and modern web technologies to provide a complete shopping experience.`,
+        `Users can browse products, apply filters, sort results, and view detailed product information including high-resolution images and specifications.`,
+        `The shopping cart supports multiple items with variant handling, persistent state, and a mini-cart preview for quick access.`,
+        `Built with React 18 and state managed via Context API and Redux, it emphasizes modularity, scalability, and a seamless user experience.`,
+      ],
+      tech_stack: [
+        "React 18",
+        "Redux",
+        "Context API",
+        "React Router v6",
+        "CSS Modules",
+        "Sass",
+        "Styled Components",
+        "JavaScript",
+        "react-icons",
+        "HTML",
+      ],
+      github_url: "https://github.com/bachansingh1407/Ecommerce-platform-using-mern-stack",
     },
     {
       title: "JWT-Based Authentication System",
@@ -92,7 +116,7 @@ const Projects = () => {
       ],
       github_url: "https://github.com/bachansingh1407/Blogging-Application-using-React"
     }
-    
+
   ];
 
   return (
