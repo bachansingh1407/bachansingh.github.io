@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+/* Class-based dark mode (driven by next-themes toggling .dark on <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: var(--font-archivo), sans-serif;
+  --font-mono: var(--font-space-mono), monospace;
+  --font-montserrat: var(--font-montserrat), sans-serif;
+
+  --color-ink: #0a0a0a;
+  --color-bg: #ffffff;
+  --color-sub: #4a4a4a;
+  --color-accent: #ff4b1f;
+
+  --color-ink-dark: #f2f2ed;
+  --color-bg-dark: #0a0a0a;
+  --color-sub-dark: #a3a3a3;
+  --color-accent-dark: #ff6a3d;
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-montserrat), sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+html.dark body {
+  background: var(--color-bg-dark);
+  color: var(--color-ink-dark);
+}
+
+::selection {
+  background: var(--color-accent);
+  color: #ffffff;
+}
+
+/* Font utilities */
+.font-archivo {
+  font-family: var(--font-archivo), sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-space-mono), monospace;
+}
+
+.font-montserrat {
+  font-family: var(--font-montserrat), sans-serif;
+}
