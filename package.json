@@ -1,28 +1,23 @@
 {
-  "name": "portfolio",
-  "version": "2.0.0",
+  "name": "personal-portfolio",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "next lint"
   },
   "dependencies": {
-    "next": "16.3.1",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "lucide-react": "1.32.0",
-    "next-themes": "0.4.6"
+    "next": "latest",
+    "page-mascot": "latest",
+    "react": "latest",
+    "react-dom": "latest"
   },
   "devDependencies": {
-    "typescript": "5.9.3",
-    "@types/node": "^22.10.5",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@tailwindcss/postcss": "4.3.3",
-    "tailwindcss": "4.3.3",
-    "eslint": "^9.18.0",
-    "eslint-config-next": "16.3.1"
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest"
   }
 }
