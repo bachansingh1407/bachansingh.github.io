@@ -43,8 +43,8 @@ export default function Home() {
 
       <header className="nav">
         <a className="brand" href="#top" aria-label="Home">
-          <span className="brand-mark">YN</span>
-          <span>product engineer</span>
+          <span className="brand-mark">BS</span>
+          <span>bachan singh</span>
         </a>
         <nav>
           <a href="#work">Work</a>
@@ -52,7 +52,7 @@ export default function Home() {
           <a href="#lab">Lab</a>
           <a href="#about">About</a>
         </nav>
-        <a className="nav-contact" href="mailto:hello@example.com">Let&apos;s talk ↗</a>
+        <a className="nav-contact" href="#about">Let&apos;s talk ↗</a>
       </header>
 
       <section className="hero" id="top">
@@ -71,7 +71,7 @@ export default function Home() {
           </p>
           <div className="hero-actions">
             <a className="button primary" href="#work">Explore the work <span>↘</span></a>
-            <a className="button ghost" href="https://github.com/" target="_blank" rel="noreferrer">GitHub ↗</a>
+            <a className="button ghost" href="https://github.com/bachansingh1407" target="_blank" rel="noreferrer">GitHub ↗</a>
           </div>
         </div>
 
@@ -167,15 +167,15 @@ export default function Home() {
           <p>I like building things where software engineering, product design and systems thinking overlap.</p>
           <p>My projects tend to start with a vague, complicated problem. The fun is turning that ambiguity into a model, then turning the model into an experience that feels surprisingly simple.</p>
           <div className="about-links">
-            <a href="https://github.com/" target="_blank" rel="noreferrer">GitHub <span>↗</span></a>
-            <a href="https://www.linkedin.com/" target="_blank" rel="noreferrer">LinkedIn <span>↗</span></a>
-            <a href="mailto:hello@example.com">Email <span>↗</span></a>
+            <a href="https://github.com/bachansingh1407" target="_blank" rel="noreferrer">GitHub <span>↗</span></a>
+            <a href="https://www.linkedin.com/in/bachansingh/" target="_blank" rel="noreferrer">LinkedIn <span>↗</span></a>
+            <a href="mailto:bachansingh1407@gmail.com">bachansingh1407@gmail.com <span>↗</span></a>
           </div>
         </div>
       </section>
 
       <footer>
-        <span>© 2026 — Built with curiosity.</span>
+        <span>© 2026 — Bachan Singh.</span>
         <span>Scroll less. Build more.</span>
       </footer>
     </main>

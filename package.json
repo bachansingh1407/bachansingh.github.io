@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "next": "latest",
-    "page-mascot": "latest",
+    "page-mascot": "^0.1.0",
     "react": "latest",
     "react-dom": "latest"
   },

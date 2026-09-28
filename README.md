@@ -1,43 +1,51 @@
-# Animated Next.js Portfolio
+# Animated Developer Portfolio
 
-A from-scratch Next.js portfolio built around a playful, dark, kinetic product-engineering aesthetic.
+A modern, interactive developer portfolio built with Next.js, TypeScript, and custom animations.
 
-## Includes
+The portfolio focuses on a visual, playful interface rather than a traditional dashboard-style developer portfolio. It combines an animated hero scene, cursor-following mascot, project presentation, and responsive layouts.
 
-- Next.js App Router + TypeScript
-- `page-mascot` cursor-following mascot
-- Hamster mascot path wired to `/public/mascots/hamster-directions.webp`
-- Animated system-thinking hero
-- Interactive thinking loop
-- Animated marquee
-- Product/system project diagrams
-- Responsive layout
+## Live Demo
+
+[View Portfolio](https://bachansingh.netlify.app)
+
+## Tech Stack
+
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- CSS Animations
+- Next.js App Router
+
+## Features
+
+- Interactive animated hero section
+- Cursor-following mascot
+- Custom animated background/scene
+- Smooth UI interactions
+- Responsive design
+- Dark visual theme
 - Reduced-motion support
-- Career OS, PathForge and Digital Literacy OS content based on the supplied projects
+- Project showcase
+- Developer-focused content
+- Optimized for modern browsers
 
-## Run
+## Project Structure
 
-```bash
-npm install
-npm run dev
-```
-
-Then open `http://localhost:3000`.
-
-## Mascot asset
-
-The component is intentionally configured exactly around:
-
-```tsx
-<Mascot
-  directions="/mascots/hamster-directions.webp"
-  size={118}
-  label="Portfolio hamster"
-/>
-```
-
-The directions sprite sheet must exist at:
-
-`public/mascots/hamster-directions.webp`
-
-The `page-mascot` package normally uses a directions sheet and optionally a reactions sheet. This starter wires the directions sheet so the mascot can follow the cursor. See the package documentation for the matching reactions sheet if you want click expressions.
+```text
+.
+├── app/
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+│
+├── components/
+│   ├── InteractiveScene.tsx
+│   └── Mascot.tsx
+│
+├── public/
+│   └── mascots/
+│
+├── package.json
+├── tsconfig.json
+└── next.config.ts
