@@ -1,0 +1,74 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { SearchEntry } from "@/lib/types";
+
+export function SearchDialog({
+  open, onClose, entries,
+}: { open: boolean; onClose: () => void; entries: SearchEntry[] }) {
+  const router = useRouter();
+  const [q, setQ] = useState("");
+  const [sel, setSel] = useState(0);
+  const input = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setQ("");
+      setSel(0);
+      setTimeout(() => input.current?.focus(), 0);
+    }
+  }, [open]);
+
+  const hits = useMemo(() => {
+    const v = q.trim().toLowerCase();
+    return entries
+      .filter((e) => !v || `${e.title} ${e.text ?? ""} ${e.kind}`.toLowerCase().includes(v))
+      .slice(0, 10);
+  }, [q, entries]);
+
+  function go(href: string) {
+    onClose();
+    router.push(href);
+  }
+
+  if (!open) return null;
+  return (
+    <div className="modal" role="dialog" aria-modal="true" aria-label="Search" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="panel">
+        <input
+          ref={input}
+          type="search"
+          value={q}
+          placeholder="Search pages, projects and technologies"
+          autoComplete="off"
+          onChange={(e) => { setQ(e.target.value); setSel(0); }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") onClose();
+            if (e.key === "ArrowDown") { e.preventDefault(); setSel((s) => Math.min(s + 1, hits.length - 1)); }
+            if (e.key === "ArrowUp") { e.preventDefault(); setSel((s) => Math.max(s - 1, 0)); }
+            if (e.key === "Enter" && hits[sel]) go(hits[sel].href);
+          }}
+        />
+        <div className="results">
+          {hits.length === 0 ? (
+            <p>No results. Try a technology or project name.</p>
+          ) : (
+            hits.map((h, i) => (
+              <a
+                key={`${h.href}-${h.title}-${i}`}
+                href={h.href}
+                className={i === sel ? "sel" : ""}
+                onMouseEnter={() => setSel(i)}
+                onClick={(e) => { e.preventDefault(); go(h.href); }}
+              >
+                {h.title}
+                <small>{h.kind}</small>
+              </a>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
