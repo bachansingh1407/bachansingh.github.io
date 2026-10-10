@@ -1,37 +1,58 @@
-# Portfolio (Next.js)
+# Portfolio 1.0
 
-Docs-style developer portfolio with a private admin. Public pages: Start here, About, Experience, Projects (with case-study pages), How I work, Stack, Contact.
+A developer portfolio with a hero home page, a docs-style layout for inner pages, an admin with draft/publish and field-level history, and optional Groq-powered AI features.
 
 ## Run locally
 
 ```bash
 npm install
-cp .env.example .env.local     # then edit the values
-npm run dev                    # http://localhost:3000, admin at /admin
-npm run typecheck              # optional
+cp .env.example .env.local      # set ADMIN_PASSWORD and SESSION_SECRET
+npm run dev                     # site: http://localhost:3000   admin: /admin
+npm run typecheck && npm run build
+npm test                        # logic tests
 ```
 
-Content is saved to `.data/content.json` locally. Delete that file to reset to the starting content in `src/lib/defaults.ts`.
+Local data lives in `.data/`. Delete it to reset to the starter content in `src/lib/defaults.ts`.
 
 ## Deploy on Netlify
 
-1. Push the project to a Git repository and import it in Netlify (Next.js is detected automatically).
-2. Add environment variables: `ADMIN_PASSWORD`, `SESSION_SECRET` (32+ random characters), `SITE_URL` (your public URL).
-3. Deploy. On Netlify, edits are stored in **Netlify Blobs**, so they survive redeploys. No database needed.
-4. After the first deploy, check: admin login works, an edit persists after a redeploy, a hidden page returns the not-found page.
+1. Push to Git and import the repo in Netlify.
+2. Set `ADMIN_PASSWORD`, `SESSION_SECRET` (32+ random characters), `SITE_URL`. Add `GROQ_API_KEY` to switch on the AI features.
+3. Content, images, messages and history are stored in Netlify Blobs automatically.
+4. After the first deploy check: sign-in works, a published edit survives a redeploy, a hidden page returns not-found, a test message reaches the Inbox, `/api/health` returns `{"ok":true}`.
 
-Back up regularly with **Admin → Overview → Export content**.
+Netlify stops functions after about 10 seconds, so screenshot capture and AI calls use a 9 second limit there. If a capture times out, retry or upload an image.
 
-## How it works
+## What's in 1.0
 
-- `src/lib/defaults.ts` holds the starting content (facts from the requirements documents only).
-- `src/lib/content.ts` filters hidden items on the server, so hidden content is never sent to visitors. Hiding Projects hides project pages too, and pages with nothing to show hide themselves.
-- `src/lib/normalize.ts` cleans everything saved from the admin (unique slugs, safe URLs only).
-- Admin is at `/admin`: password sign-in, signed httpOnly session cookie, form editing for every section, a publish-readiness check, and JSON export/import.
-- `/admin` and `/api` are excluded in `robots.txt` and the admin is `noindex`.
+**Public site**
+- Hero home with bento "Selected work" (swipeable on phones), category chips, and a "How I work" flow diagram that ends in a "Let's talk" contact node. The diagram lays itself out from each step's "takes input from" links.
+- About with a "Find me" card (email, GitHub, LinkedIn, resume). Contact with form and details side by side.
+- Experience as a timeline or the same flow diagram. Technologies shown as chips.
+- Projects: live-URL preview captured into a browser-style frame, screenshots, case studies.
+- Stack: an interactive map with brand icons. Open a tool to read why you use it, how, and what you considered.
+- Six colour themes with light, dark and system modes. Input fields have their own fill and a 3:1 border on every theme (tested).
+- Optional "Ask AI" chat that answers only from published content.
+
+**Admin**
+- Draft and Publish, with a revision check so a second tab can't overwrite newer changes.
+- History records every published change field by field. Open a version to see old and new text, and put back a single old value or a removed item. The last 100 versions are kept.
+- Dashboard with status cards and suggestions. Each has a "?" explaining why it matters and how to do it, and a "Take me there" button to the exact item.
+- One consistent row layout (grip, content, actions), keyboard and touch drag-and-drop, Undo on delete, a Public/Hidden switch.
+- Icon picker (Simple Icons) with "Find icons automatically". Screenshot capture from a live URL.
+- Optional "Suggest a clearer version" on text fields: shows what changed, and you choose.
+- Preview, Inbox, backup and import, four admin themes plus System.
+
+## Safety notes
+
+- Hidden items and drafts never reach visitors or the AI. Storage failures show a "temporarily unavailable" page, never starter content.
+- The Groq key stays on the server. AI chat is rate-limited, sees only a digest of public content, and is told not to guess.
+- Uploads are checked by file signature, size-limited and served with safe headers. Icon paths are validated before storage.
 
 ## Known limits
 
-- Login rate limiting is per server instance. Add an edge rate limit (or an identity provider) before relying on it.
-- Public pages render on request (so admin edits show immediately). Add caching later if traffic grows.
-- Not included yet: contact form (needs a mail service), analytics, version history, preview of hidden content.
+- Never run through `npm install` and `next build` where it was written. Run `npm run typecheck` and `npm run build` first. Logic tests pass, and the public components were server-rendered successfully against stubs.
+- Not verified here: Groq and screenshot-service calls, the Simple Icons package shape, drag-and-drop and flow lines in a real browser, and Netlify behaviour.
+- Rate limits are per server instance. Add an edge limit for stronger protection.
+- Category chip colours come from the category name, not a managed list. Uploaded images aren't re-encoded or garbage-collected. No analytics.
+- Left for later: automated visual checks, "compare with published" inside editors, drag-to-position flow boxes.

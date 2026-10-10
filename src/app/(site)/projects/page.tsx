@@ -1,8 +1,11 @@
-import Link from "next/link";
-import { pageTitle, requirePage } from "@/lib/content";
+import { ProjectCard } from "@/components/ProjectCard";
+import { pageTitle } from "@/lib/public";
+import { buildMeta } from "@/lib/seo";
+import { requirePage } from "@/lib/site";
 
 export async function generateMetadata() {
-  return { title: pageTitle(await requirePage("projects"), "projects") };
+  const pub = await requirePage("projects");
+  return buildMeta(pub, { title: pageTitle(pub, "projects"), description: "Projects explained in depth: problem, approach, decisions and validation.", path: "/projects" });
 }
 
 export default async function ProjectsPage() {
@@ -11,15 +14,7 @@ export default async function ProjectsPage() {
     <>
       <h1>{pageTitle(pub, "projects")}</h1>
       <p className="lead">A few projects, explained in depth rather than a long list.</p>
-      <div className="rows">
-        {pub.projects.map((p) => (
-          <Link key={p.id} href={`/projects/${p.id}`} className="row-link">
-            <b>{p.name}</b>
-            {p.summary ? <span className="d">{p.summary}</span> : null}
-            {p.category ? <span className="tag">{p.category}</span> : null}
-          </Link>
-        ))}
-      </div>
+      <div className="pgrid pgrid-2">{pub.projects.map((p) => <ProjectCard key={p.uid} p={p} />)}</div>
     </>
   );
 }

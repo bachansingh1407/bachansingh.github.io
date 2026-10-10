@@ -1,107 +1,149 @@
-import { notFound } from "next/navigation";
+import { randomBytes } from "crypto";
 import { DEFAULT_CONTENT } from "./defaults";
+import { MAX_VERSIONS } from "./limits";
 import { normalizeContent } from "./normalize";
-import { readRaw } from "./store";
-import type { Content, NavItem, PageId, SearchEntry } from "./types";
+import { diffContent } from "./changes";
+import { counts, toPublic } from "./public";
+import { del, getJson, list, setJson } from "./store";
+import { errorsOnly, validateContent } from "./validate";
+import type { Change, Content, Issue, VersionInfo } from "./types";
 
-export const PAGE_PATH: Record<PageId, string> = {
-  start: "/", about: "/about", experience: "/experience", projects: "/projects",
-  how: "/how", stack: "/stack", contact: "/contact",
-};
+export { PAGE_PATH, formatUpdated, navFor, pageTitle, searchFor } from "./public";
 
-const GROUP: Record<PageId, string> = {
-  start: "Portfolio", about: "Portfolio", experience: "Portfolio", projects: "Portfolio",
-  how: "How I work", stack: "Reference", contact: "Reference",
-};
+export class StorageUnavailable extends Error {}
+export class ConflictError extends Error { constructor(public current: Content) { super("conflict"); } }
+export class ValidationError extends Error { constructor(public issues: Issue[]) { super("invalid"); } }
 
-/** Full content including hidden items. Admin only. Throws if storage fails. */
-export async function getContentStrict(): Promise<Content> {
-  const raw = await readRaw();
-  return raw ? normalizeContent(raw) : normalizeContent(DEFAULT_CONTENT);
-}
+const nowIso = () => new Date().toISOString();
+const today = () => nowIso().slice(0, 10);
+let lastGood: Content | null = null;
 
-async function getContentSafe(): Promise<Content> {
-  try {
-    return await getContentStrict();
-  } catch (e) {
-    console.error("Content storage unavailable, using defaults", e);
-    return normalizeContent(DEFAULT_CONTENT);
-  }
+/** Loads draft and published, creating them on first run (or migrating the old single "content" key). */
+async function load(): Promise<{ draft: Content; published: Content }> {
+  const [d, p] = await Promise.all([getJson("draft"), getJson("published")]);
+  if (d && p) return { draft: normalizeContent(d), published: normalizeContent(p) };
+  const seed = normalizeContent((await getJson("content")) ?? DEFAULT_CONTENT);
+  const published = p ? normalizeContent(p) : { ...seed, rev: 0, publishedAt: nowIso() };
+  const draft = d ? normalizeContent(d) : { ...published };
+  if (!p) await setJson("published", published);
+  if (!d) await setJson("draft", draft);
+  return { draft, published };
 }
 
 /**
- * Public view: hidden items and pages with nothing to show are removed on the server,
- * so they are never sent to a visitor's browser. Hiding Projects also hides project pages.
+ * What visitors get. If storage fails we serve the last good published copy from memory, and if there
+ * is none we throw. We never fall back to the starter content, which could expose hidden items.
  */
-export async function getPublic(): Promise<Content> {
-  const c = await getContentSafe();
-  const visible = (id: PageId) => c.pages.find((p) => p.id === id)?.visible ?? false;
-
-  const work = visible("experience") ? c.work.filter((w) => w.visible && w.title) : [];
-  const projects = visible("projects") ? c.projects.filter((p) => p.visible && p.name) : [];
-  const stack = visible("stack")
-    ? c.stack
-        .filter((g) => g.visible && g.name)
-        .map((g) => ({ ...g, items: g.items.filter((i) => i.visible) }))
-        .filter((g) => g.items.length > 0)
-    : [];
-
-  const live: Record<PageId, boolean> = {
-    start: true,
-    about: visible("about") && c.about.length > 0,
-    experience: work.length > 0,
-    projects: projects.length > 0,
-    how: visible("how") && c.how.steps.length > 0,
-    stack: stack.length > 0,
-    contact: visible("contact"),
-  };
-
-  return { ...c, work, projects, stack, pages: c.pages.filter((p) => live[p.id]) };
+export async function getPublished(): Promise<Content> {
+  try {
+    const raw = await getJson("published");
+    const c = raw ? normalizeContent(raw) : (await load()).published;
+    lastGood = c;
+    return c;
+  } catch (e) {
+    console.error("Storage read failed", e);
+    if (lastGood) return lastGood;
+    throw new StorageUnavailable("Content storage is unavailable");
+  }
 }
 
-export async function requirePage(id: PageId): Promise<Content> {
-  const pub = await getPublic();
-  if (!pub.pages.some((p) => p.id === id)) notFound();
-  return pub;
+/** Draft with hidden items shown, for the owner's preview only. */
+export async function getPreviewContent(): Promise<Content> {
+  return toPublic((await load()).draft, { preview: true });
 }
 
-export function pageTitle(pub: Content, id: PageId): string {
-  return pub.pages.find((p) => p.id === id)?.title ?? "Page";
+export async function getDraftState() {
+  const { draft, published } = await load();
+  return { draft, published };
 }
 
-export function navFor(pub: Content): NavItem[] {
-  return pub.pages.map((p) => ({
-    id: p.id,
-    href: PAGE_PATH[p.id],
-    title: p.title,
-    group: GROUP[p.id],
-    children:
-      p.id === "experience"
-        ? pub.work.map((w) => ({ title: w.title, href: `/experience#${w.id}` }))
-        : p.id === "projects"
-          ? pub.projects.map((x) => ({ title: x.name, href: `/projects/${x.id}` }))
-          : undefined,
+export async function saveDraft(input: unknown, baseRev: number): Promise<{ draft: Content; issues: Issue[] }> {
+  const { draft: current } = await load();
+  if (baseRev !== current.rev) throw new ConflictError(current);
+  const next = normalizeContent(input);
+  next.rev = current.rev + 1;
+  next.updated = today();
+  next.publishedAt = current.publishedAt;
+  await setJson("draft", next);
+  return { draft: next, issues: validateContent(next) };
+}
+
+function versionId() {
+  return nowIso().replace(/[-:.]/g, "").slice(0, 15) + "-" + randomBytes(3).toString("hex");
+}
+
+export async function publish(baseRev: number, note: string): Promise<{ draft: Content; published: Content }> {
+  const { draft, published: previous } = await load();
+  if (baseRev !== draft.rev) throw new ConflictError(draft);
+  const issues = errorsOnly(validateContent(draft));
+  if (issues.length) throw new ValidationError(issues);
+
+  const at = nowIso();
+  const published = { ...draft, publishedAt: at };
+  await setJson("published", published);
+  const nextDraft = { ...draft, publishedAt: at };
+  await setJson("draft", nextDraft);
+  lastGood = published;
+
+  // Record what changed so any old value can be looked at, or put back, later.
+  const changes = diffContent(previous, published);
+  const existing = await loadIndex(); // read before writing, so the new snapshot can't be counted twice
+  const id = versionId();
+  const info: VersionInfo = { id, at, note: note.slice(0, 120), counts: counts(published), changeCount: changes.length };
+  await setJson(`versions/${id}`, { ...info, content: published, changes });
+  const index = [info, ...existing.filter((v) => v.id !== id)];
+  for (const gone of index.slice(MAX_VERSIONS)) await del(`versions/${gone.id}`);
+  await setJson("versions-index", index.slice(0, MAX_VERSIONS));
+  return { draft: nextDraft, published };
+}
+
+/** Small index so the History screen doesn't have to read every snapshot. Built once from older snapshots if missing. */
+async function loadIndex(): Promise<VersionInfo[]> {
+  const idx = await getJson<VersionInfo[]>("versions-index");
+  if (idx) return idx;
+  const keys = (await list("versions/")).reverse();
+  const rows = await Promise.all(keys.map((k) => getJson<{ id: string; at: string; note: string; content: unknown; changes?: Change[] }>(k)));
+  const built = rows.filter(Boolean).map((r) => ({
+    id: r!.id, at: r!.at, note: r!.note, counts: counts(normalizeContent(r!.content)), changeCount: r!.changes?.length ?? 0,
   }));
+  if (built.length) await setJson("versions-index", built);
+  return built;
 }
 
-export function searchFor(pub: Content): SearchEntry[] {
-  return [
-    ...pub.pages.map((p) => ({ title: p.title, kind: "Page", href: PAGE_PATH[p.id] })),
-    ...pub.projects.map((p) => ({
-      title: p.name, kind: `Project · ${p.category}`.replace(/ · $/, ""), href: `/projects/${p.id}`, text: p.summary,
-    })),
-    ...pub.work.flatMap((w) =>
-      w.items.map((i) => ({ title: i.title, kind: "Experience", href: `/experience#${w.id}`, text: i.text })),
-    ),
-    ...pub.stack.flatMap((g) =>
-      g.items.map((i) => ({ title: i.name, kind: `Stack · ${g.name}`, href: "/stack", text: i.description })),
-    ),
-  ];
+export async function listVersions(): Promise<VersionInfo[]> {
+  return loadIndex();
 }
 
-export function formatUpdated(iso: string): string {
-  const d = new Date(iso + "T00:00:00Z");
-  return isNaN(d.getTime())
-    ? ""
-    : d.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+export async function getVersionChanges(id: string): Promise<Change[]> {
+  if (!/^\d{8}T\d{6}-[a-f0-9]{6}$/.test(id)) throw new Error("Bad version id");
+  const v = await getJson<{ changes?: Change[] }>(`versions/${id}`);
+  if (!v) throw new Error("Version not found");
+  return v.changes ?? [];
+}
+
+export async function restoreVersion(id: string, baseRev: number): Promise<Content> {
+  if (!/^\d{8}T\d{6}-[a-f0-9]{6}$/.test(id)) throw new Error("Bad version id");
+  const v = await getJson<{ content: unknown }>(`versions/${id}`);
+  if (!v) throw new Error("Version not found");
+  const { draft: current } = await load();
+  if (baseRev !== current.rev) throw new ConflictError(current);
+  const next = normalizeContent(v.content);
+  next.rev = current.rev + 1;
+  next.updated = today();
+  next.publishedAt = current.publishedAt;
+  await setJson("draft", next);
+  return next;
+}
+
+/** Writes at most one backup per day (when the admin is opened) and keeps the last 14. */
+export async function maybeBackup(): Promise<void> {
+  try {
+    const keys = await list("backups/");
+    if (keys.some((k) => k.endsWith(today()))) return;
+    const { draft, published } = await load();
+    await setJson(`backups/${today()}`, { at: nowIso(), draft, published });
+    for (const k of keys.slice(0, Math.max(0, keys.length + 1 - 14))) await del(k);
+  } catch (e) {
+    console.error("Backup skipped", e);
+  }
 }

@@ -1,30 +1,29 @@
 import type { Metadata } from "next";
 import { SiteShell } from "@/components/SiteShell";
-import { formatUpdated, getPublic, navFor, searchFor } from "@/lib/content";
+import { aiConfigured } from "@/lib/ai";
+import { formatUpdated, navFor, searchFor } from "@/lib/public";
+import { getPub, previewOnce } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const pub = await getPublic();
-  const title = `${pub.profile.name} · Portfolio`;
+  const pub = await getPub();
+  const title = `${pub.profile.name} · ${pub.profile.role || "Portfolio"}`;
   return {
     title: { default: title, template: `%s · ${pub.profile.name}` },
-    description: pub.profile.positioning,
-    openGraph: { title, description: pub.profile.positioning, type: "website" },
+    ...((await previewOnce()) ? { robots: { index: false, follow: false } } : {}),
   };
 }
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const pub = await getPublic();
-  const hasContact = pub.pages.some((p) => p.id === "contact");
+  const pub = await getPub();
   return (
     <SiteShell
-      nav={navFor(pub)}
-      search={searchFor(pub)}
-      name={pub.profile.name}
-      role={pub.profile.role}
-      updated={formatUpdated(pub.updated)}
-      hasContact={hasContact}
+      nav={navFor(pub)} search={searchFor(pub)} name={pub.profile.name} role={pub.profile.role}
+      updated={formatUpdated(pub.publishedAt || pub.updated)} resumeHref={pub.contact.resumeUrl}
+      palettes={pub.site.palettes} defaultPalette={pub.site.defaultPalette} defaultMode={pub.site.defaultMode}
+      preview={await previewOnce()}
+      ask={{ enabled: pub.site.ai.enabled && aiConfigured(), questions: pub.site.ai.questions }}
     >
       {children}
     </SiteShell>

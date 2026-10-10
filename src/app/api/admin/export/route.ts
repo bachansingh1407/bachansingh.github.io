@@ -1,18 +1,23 @@
-import { NextResponse } from "next/server";
-import { isAuthed } from "@/lib/auth";
-import { getContentStrict } from "@/lib/content";
+import { adminGuard, json } from "@/lib/api";
+import { getDraftState } from "@/lib/content";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const content = await getContentStrict();
-  return new NextResponse(JSON.stringify(content, null, 2), {
-    headers: {
-      "Content-Type": "application/json",
-      "Content-Disposition": `attachment; filename="portfolio-content-${content.updated}.json"`,
-      "Cache-Control": "no-store",
-    },
-  });
+export async function GET(req: Request) {
+  const g = await adminGuard(req, false); if (g) return g;
+  try {
+    const { draft, published } = await getDraftState();
+    const body = JSON.stringify({ exportedAt: new Date().toISOString(), draft, published }, null, 2);
+    return new Response(body, {
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Disposition": `attachment; filename="portfolio-backup-${draft.updated}.json"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (e) {
+    console.error("Export failed", e);
+    return json({ error: "Export failed. Content storage could not be read." }, 500);
+  }
 }

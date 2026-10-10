@@ -1,36 +1,28 @@
-import { pageTitle, requirePage } from "@/lib/content";
+import { ContactForm } from "@/components/ContactForm";
+import { ContactLinks, contactRows } from "@/components/ContactLinks";
+import { pageTitle } from "@/lib/public";
+import { buildMeta } from "@/lib/seo";
+import { requirePage } from "@/lib/site";
 
 export async function generateMetadata() {
-  return { title: pageTitle(await requirePage("contact"), "contact") };
+  const pub = await requirePage("contact");
+  return buildMeta(pub, { title: pageTitle(pub, "contact"), description: "Get in touch.", path: "/contact" });
 }
 
 export default async function ContactPage() {
   const pub = await requirePage("contact");
   const { contact } = pub;
-  const rows = [
-    contact.email && { label: "Email", text: contact.email, href: `mailto:${contact.email}` },
-    contact.github && { label: "GitHub", text: contact.github.replace(/^https?:\/\//, ""), href: contact.github },
-    contact.linkedin && { label: "LinkedIn", text: contact.linkedin.replace(/^https?:\/\//, ""), href: contact.linkedin },
-    contact.resumeUrl && { label: "Resume", text: "Download", href: contact.resumeUrl },
-  ].filter(Boolean) as { label: string; text: string; href: string }[];
-
+  const hasLinks = contactRows(contact).length > 0;
   return (
     <>
       <h1>{pageTitle(pub, "contact")}</h1>
-      {rows.length ? (
-        <div className="rows">
-          {rows.map((r) => (
-            <a key={r.label} className="row-link" href={r.href} {...(r.href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
-              <b>{r.label}</b>
-              <span className="d">{r.text}</span>
-            </a>
-          ))}
+      {contact.formEnabled || hasLinks ? (
+        <div className={`contact-grid${contact.formEnabled && hasLinks ? "" : " single"}`}>
+          {contact.formEnabled ? <div><p className="lead">Send me a message and I&apos;ll reply by email.</p><ContactForm /></div> : null}
+          {hasLinks ? <ContactLinks contact={contact} title="Or reach me directly" /> : null}
         </div>
       ) : (
-        <div className="empty">
-          <b>Contact details coming soon</b>
-          Email, GitHub and LinkedIn appear here once they are added.
-        </div>
+        <div className="empty"><b>Contact details coming soon</b>Email, GitHub and LinkedIn appear here once they are added.</div>
       )}
     </>
   );
