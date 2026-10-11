@@ -165,7 +165,7 @@ code{font-family:var(--mono);font-size:.84em}
 .orbit{width:min(100%,20rem);animation:spin 60s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (max-width:820px){.hero-in{grid-template-columns:1fr}.hero-art{order:-1}.hero-art img,.orbit{width:min(60%,13rem)}}
-.lsec{max-width:72rem;margin:0 auto;padding:clamp(1.5rem,4vw,3rem) clamp(1.25rem,5vw,4rem)}
+.lsec{max-width:80rem;margin:0 auto;padding:clamp(1.5rem,4vw,3rem) clamp(1.25rem,5vw,4rem)}
 .lsec-head{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-bottom:1.2rem}
 .lsec h2{font-size:clamp(1.4rem,3vw,1.8rem);margin:0;letter-spacing:-.01em}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(16rem,1fr));gap:1.2rem}
@@ -370,24 +370,39 @@ code{font-family:var(--mono);font-size:.84em}
 
 /* Flow diagram */
 .flow{position:relative;margin:.4rem 0 1rem}
-.flow-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;color:color-mix(in srgb,var(--text) 40%,var(--bg));z-index:0}
-.flow-lines path{fill:none;stroke:currentColor;stroke-width:2;transition:opacity .2s,stroke .2s}
-.flow-lines path.hl{stroke:var(--accent);color:var(--accent);stroke-width:2.6}
-.flow-lines path.dim{opacity:.3}
-.flow-grid{list-style:none;margin:0;padding:0;display:grid;gap:2.4rem 2.6rem;position:relative;z-index:1}
+.flow-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;color:color-mix(in srgb,var(--text) 32%,var(--bg));z-index:0}
+.flow-lines path{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;transition:opacity .2s,stroke .2s}
+.flow-lines marker path{fill:currentColor;stroke:none}
+.flow-lines path.hl{stroke:var(--accent);stroke-width:2.6}
+.flow-lines path.dim{opacity:.25}
+.flow-lines path.beam{stroke:var(--accent);stroke-width:3;stroke-dasharray:12 88;stroke-dashoffset:12;opacity:1;filter:drop-shadow(0 0 4px var(--accent));animation:flow-beam 2.4s linear infinite}
+.flow-lines path.beam.dim{opacity:0}
+@keyframes flow-beam{to{stroke-dashoffset:-88}}
+
+.flow-grid{list-style:none;margin:0;padding:0;display:grid;gap:2.6rem 3rem;position:relative;z-index:1}
 .flow-grid>li{display:flex;min-width:0}
-.fnode{--k:var(--accent);width:100%;background:var(--bg);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 18px rgba(0,0,0,.05);transition:border-color .15s,box-shadow .15s,transform .15s}
-.fnode:hover,.fnode:focus-visible{border-color:var(--accent);box-shadow:0 8px 24px color-mix(in srgb,var(--accent) 20%,transparent);transform:translateY(-2px)}
-.k-start{--k:#e0b400}.k-end{--k:#2fb36d}
-.fnode header{display:flex;align-items:center;gap:.55rem;padding:.7rem .9rem;background:color-mix(in srgb,var(--k) 30%,var(--bg));color:var(--text)}
-.fnode header::after{content:"";margin-left:auto;width:.6rem;height:.6rem;border-radius:50%;border:2px solid var(--text);background:var(--bg);flex:none}
-.fnode h3{margin:0!important;font-size:1rem!important;font-weight:800}
-.fnode h3 a{text-decoration:none}.fnode h3 a:hover{text-decoration:underline}
-.fbody{padding:.8rem .9rem 1rem}
+
+.fnode{--k:var(--accent);position:relative;width:100%;background:var(--bg);border:1px solid var(--border);border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,.05),0 10px 28px rgba(0,0,0,.06);transition-property:border-color,box-shadow;transition-duration:.2s}
+.fnode:hover,.fnode:focus-visible{border-color:var(--k);box-shadow:0 12px 32px color-mix(in srgb,var(--k) 24%,transparent)}
+.k-start{--k:#e0b400}
+.k-end{--k:#2fb36d}
+.k-start::before,.k-end::before{position:absolute;top:-.62rem;right:.9rem;font-size:.7rem;font-weight:800;line-height:1.5;padding:.05rem .65rem;border-radius:99px;background:var(--k);color:#111}
+.k-start::before{content:"Start"}
+.k-end::before{content:"Finish"}
+
+.fnode header{display:flex;align-items:center;gap:.65rem;padding:.85rem .95rem .15rem}
+.ficon{flex:none;width:2.2rem;height:2.2rem;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--k) 16%,var(--bg));color:color-mix(in srgb,var(--k) 65%,var(--text));border:1px solid color-mix(in srgb,var(--k) 38%,var(--border))}
+.fnode h3{margin:0!important;font-size:1rem!important;font-weight:800;line-height:1.3}
+.fnode h3 a{text-decoration:none}
+.fnode h3 a:hover{text-decoration:underline}
+.fbody{padding:.5rem .95rem 1rem}
 .fbody p{margin:0 0 .7rem!important;font-size:.88rem;line-height:1.55;color:var(--muted)}
 .fchips small{display:block;font-size:.72rem;font-weight:800;margin-bottom:.35rem}
 .fchips div{display:flex;flex-wrap:wrap;gap:.35rem}
-.fchips span{font-size:.74rem;font-weight:700;padding:.12rem .55rem;border-radius:99px;background:color-mix(in srgb,var(--k) 16%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 40%,var(--border))}
+.fchips span{font-size:.74rem;font-weight:700;padding:.12rem .55rem;border-radius:99px;background:color-mix(in srgb,var(--k) 14%,var(--bg));border:1px solid color-mix(in srgb,var(--k) 38%,var(--border))}
+
+@media (prefers-reduced-motion:reduce){.flow-lines path.beam{display:none}}
+.flow-grid>li{margin:0}
 
 /* Stack map */
 .smap-tools{display:flex;gap:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:1.2rem 0 .4rem}
@@ -471,7 +486,7 @@ button.tile:hover{border-color:var(--accent);transform:translateY(-2px);box-shad
 .ask-form{display:flex;gap:.5rem;padding:.7rem;border-top:1px solid var(--border)}
 .ask-form input{flex:1;min-width:0;padding:.6rem .8rem;border:1.5px solid var(--field-border);border-radius:10px;background:var(--field);color:var(--text);font:inherit;min-height:2.5rem}
 @media (max-width:520px){.ask-wrap{padding:0}.ask{border-radius:16px 16px 0 0;max-height:85vh}.ask-fab span{display:none}.ask-fab{padding:.8rem}}
-@media (prefers-reduced-motion:reduce){.typing i{animation:none}.ask-fab:hover,.fnode:hover,button.tile:hover{transform:none}}
+@media (prefers-reduced-motion:reduce){.typing i{animation:none}.ask-fab:hover,button.tile:hover{transform:none}}
 
 /* ===== v3: admin ===== */
 .adm-group{margin-bottom:.9rem}

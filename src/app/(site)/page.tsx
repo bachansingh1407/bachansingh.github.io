@@ -88,7 +88,7 @@ export default async function HomePage() {
             <div className="lsec-head"><h2>How I work</h2>{has("how") ? <Link href="/how" className="textlink">Read more</Link> : null}</div>
             <p className="lsec-sub">From a vague request to something shipped, and then to a conversation.</p>
           </Reveal>
-          <Reveal><FlowGraph nodes={flow} label="How I work, step by step" /></Reveal>
+          <FlowGraph nodes={flow} label="How I work, step by step" />
         </section>
       ) : null}
 
