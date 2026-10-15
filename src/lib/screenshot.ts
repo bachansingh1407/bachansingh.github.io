@@ -1,4 +1,5 @@
 import { sniff } from "./media";
+import { onNetlify } from "./store";
 
 /** Public https addresses only: no credentials, odd ports, IP literals, or internal-looking hostnames. */
 export function isPublicHttpsUrl(raw: string): boolean {
@@ -22,7 +23,7 @@ export async function captureScreenshot(target: string): Promise<{ bytes: Uint8A
   const endpoint = tpl.replace("{urlenc}", encodeURIComponent(target)).replace("{url}", target);
   if (!/^https:\/\//.test(endpoint)) throw new Error("Screenshot service is misconfigured.");
   const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), process.env.NETLIFY ? 9_000 : 30_000); // Netlify functions stop at about 10 s
+  const timer = setTimeout(() => ctl.abort(), onNetlify() ? 9_000 : 30_000); // Netlify functions stop at about 10 s
   try {
     const res = await fetch(endpoint, { signal: ctl.signal, redirect: "follow" });
     if (!res.ok) throw new Error("The screenshot service couldn't capture that page.");
