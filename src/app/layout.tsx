@@ -11,7 +11,7 @@ const sans = Mulish({ subsets: ["latin"], variable: "--font-sans", display: "swa
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { metadataBase: new URL(process.env.SITE_URL ?? "http://localhost:3000") };
+export const metadata: Metadata = { metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000") };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 const CSS = themeCss();
