@@ -11,6 +11,7 @@ export function isPublicHttpsUrl(raw: string): boolean {
   return true;
 }
 
+const DEFAULT_TEMPLATE = "";
 
 /**
  * Asks a screenshot service for a picture of the page. Our server only talks to the service named in
@@ -18,7 +19,7 @@ export function isPublicHttpsUrl(raw: string): boolean {
  */
 export async function captureScreenshot(target: string): Promise<{ bytes: Uint8Array; type: string }> {
   if (!isPublicHttpsUrl(target)) throw new Error("Use a public https:// address.");
-  const tpl = process.env.NEXT_PUBLIC_SCREENSHOT_URL_TEMPLATE || "";
+  const tpl = process.env.NEXT_PUBLIC_SCREENSHOT_URL_TEMPLATE || DEFAULT_TEMPLATE;
   const endpoint = tpl.replace("{urlenc}", encodeURIComponent(target)).replace("{url}", target);
   if (!/^https:\/\//.test(endpoint)) throw new Error("Screenshot service is misconfigured.");
   const ctl = new AbortController();
