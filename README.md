@@ -3,8 +3,6 @@
 
 Personal portfolio site built with Next.js, TypeScript, and Tailwind CSS. Includes an AI assistant that answers questions about my projects, skills, and experience.
 
-**Live site:** [bachansingh.netlify.app](https://bachansingh.netlify.app/)
-
 ## Tech Stack
 
 - **Framework:** Next.js 16 (App Router)

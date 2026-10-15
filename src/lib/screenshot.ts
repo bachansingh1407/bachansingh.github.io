@@ -11,8 +11,10 @@ export function isPublicHttpsUrl(raw: string): boolean {
   return true;
 }
 
-const DEFAULT_TEMPLATE = "https://image.thum.io/get/width/1200/crop/750/noanimate/{url}";
-
+const DEFAULT_TEMPLATE = [
+  "https://image.thum.io/get/width/1200/crop/750/noanimate/",
+  "{url}",
+].join("");
 /**
  * Asks a screenshot service for a picture of the page. Our server only talks to the service named in
  * SCREENSHOT_URL_TEMPLATE (use {url} or {urlenc}), never to the target site itself.
