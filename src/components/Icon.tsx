@@ -1,5 +1,6 @@
 import { ICONS } from "@/lib/icons";
 import type { StackIcon } from "@/lib/types";
+import { hueOf } from "./CategoryChip";
 
 export function Icon({ name, size = 18, className }: { name: string; size?: number; className?: string }) {
   const d = ICONS[name] ?? ICONS.layers;
@@ -13,5 +14,5 @@ export function Icon({ name, size = 18, className }: { name: string; size?: numb
 /** Brand glyph from Simple Icons (path data is validated before it is ever stored). Falls back to the first letter. */
 export function BrandIcon({ icon, name, size = 26 }: { icon: StackIcon | null; name: string; size?: number }) {
   if (icon) return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" role="img" aria-label={icon.title || name}><path d={icon.path} /></svg>;
-  return <span className="letter-icon" style={{ width: size, height: size, fontSize: size * 0.5 }} aria-hidden="true">{name.trim()[0]?.toUpperCase() ?? "?"}</span>;
+  return <span className="letter-icon" style={{ width: size, height: size, fontSize: size * 0.5, ["--h" as string]: String(hueOf(name)) }} aria-hidden="true">{name.trim()[0]?.toUpperCase() ?? "?"}</span>;
 }

@@ -1,4 +1,4 @@
-import { ProjectCard } from "@/components/ProjectCard";
+import { ProjectsGrid } from "@/components/ProjectsGrid";
 import { pageTitle } from "@/lib/public";
 import { buildMeta } from "@/lib/seo";
 import { requirePage } from "@/lib/site";
@@ -12,9 +12,12 @@ export default async function ProjectsPage() {
   const pub = await requirePage("projects");
   return (
     <>
-      <h1>{pageTitle(pub, "projects")}</h1>
-      <p className="lead">A few projects, explained in depth rather than a long list.</p>
-      <div className="pgrid pgrid-2">{pub.projects.map((p) => <ProjectCard key={p.uid} p={p} />)}</div>
+      <div className="pagehead">
+        <p className="sec-eyebrow">{pageTitle(pub, "projects")}</p>
+        <h1>Work, explained in depth</h1>
+        <p>Each project is written as context, decisions and validation, not just a screenshot.</p>
+      </div>
+      <section className="lsec" style={{ paddingTop: 0 }}><ProjectsGrid projects={pub.projects} /></section>
     </>
   );
 }

@@ -1,60 +1,4 @@
-
-# Bachan Singh — Portfolio
-
-Personal portfolio site built with Next.js, TypeScript, and Tailwind CSS. Includes an AI assistant that answers questions about my projects, skills, and experience.
-
-
-## Tech Stack
-
-- **Framework:** Next.js 16 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS 4
-- **UI:** React 19, next-themes (light/dark mode), lucide-react (icons)
-- **AI Assistant:** Custom chat API route (`app/api/chat/route.ts`) powering an in-page assistant that answers visitor questions about my work
-
-## Features
-
-- Responsive, single-page portfolio — Hero, About, Skills, Experience, Projects, and Contact sections
-- Light/dark theme toggle
-- Floating navigation
-- AI-powered "Ask about Bachan" assistant with Markdown-formatted replies
-- SEO-ready: dynamic sitemap, robots.txt, and Open Graph image generation
-- Fully driven by a single content file (`data/site.ts`) — update your info once and it flows through the whole site
-
-## Project Structure
-
-```
-├── app/                # Next.js App Router pages, layout, API routes, SEO files
-│   └── api/chat/       # AI assistant API route
-├── components/         # UI components (Hero, About, Skills, Projects, etc.)
-├── data/site.ts        # Single source of truth for all site content
-├── public/             # Static assets
-└── ...
-```
-
-## Customization
-
-All personal content — name, bio, skills, projects, experience, and contact info — lives in [`data/site.ts`](./data/site.ts). Edit that file to reuse this template for your own portfolio.
-
-## Featured Projects
-
-- **Campus** — Browser-based desktop OS with draggable windows, a real file system backed by recursive SQL, and an AI agent (Steve) that can operate the workspace
-- **DoShare** — Secure file-sharing and management web app (final-year project)
-- **HR Dashboard** — MERN-stack employee record CRUD app with JWT auth and real-time data
-- **E-commerce Platform** — Full-stack app with dynamic product listings and order workflows
-- **Blogging Application** — React app for creating, updating, and deleting posts
-
-## Connect
-
-- **GitHub:** [github.com/bachansingh1407](https://github.com/bachansingh1407)
-- **LinkedIn:** [linkedin.com/in/bachansingh](https://www.linkedin.com/in/bachansingh/)
-- **Email:** bachansingh1407@gmail.com
-
-## License
-
-This project is open source. Feel free to fork it and adapt it for your own portfolio.
-
-# Animated Developer Portfolio
+# Portfolio 1.1
 
 A developer portfolio with a hero home page, a docs-style layout for inner pages, an admin with draft/publish and field-level history, and optional Groq-powered AI features.
 
@@ -79,25 +23,33 @@ Local data lives in `.data/`. Delete it to reset to the starter content in `src/
 
 Netlify stops functions after about 10 seconds, so screenshot capture and AI calls use a 9 second limit there. If a capture times out, retry or upload an image.
 
-## What's in 1.0
+## What's new in 1.1 (UI/UX redesign)
 
-**Public site**
-- Hero home with bento "Selected work" (swipeable on phones), category chips, and a "How I work" flow diagram that ends in a "Let's talk" contact node. The diagram lays itself out from each step's "takes input from" links.
-- About with a "Find me" card (email, GitHub, LinkedIn, resume). Contact with form and details side by side.
-- Experience as a timeline or the same flow diagram. Technologies shown as chips.
-- Projects: live-URL preview captured into a browser-style frame, screenshots, case studies.
-- Stack: an interactive map with brand icons. Open a tool to read why you use it, how, and what you considered.
-- Six colour themes with light, dark and system modes. Input fields have their own fill and a 3:1 border on every theme (tested).
-- Optional "Ask AI" chat that answers only from published content.
+Two npm libraries from your own stack: **React Flow** (`@xyflow/react`) draws the "How I work" diagram, and **Motion** (`motion`) handles animation.
+
+**Layout rule**
+- Home, Projects and Contact use a full-width top navigation (these pages sell and convert).
+- About, Experience, How I work, Stack and project pages use the docs-style sidebar (these pages are read).
+- Every page shares one container width, so headings, cards and the footer line up.
+
+**Home**
+- Hero with a profile card (photo or initials, role, location, the tools you work with, and counts of projects, tools and roles taken from your content), a slow tools marquee, and a featured-first project grid. Project cards without an image get a coloured pattern instead of a blank block.
+- "How I work" is a React Flow diagram: boxes arranged from each step's "takes input from" links, wrapping in a snake pattern, with animated connectors, hover to trace a path, and a final "Let's talk" box. It scales to the container and never captures page scrolling. A plain readable list shows first, without JavaScript, and if the diagram fails.
+- Footer with pages and your contact links.
+
+**Contact:** split layout (details and tips on the left, form card on the right) that fits one screen, animated success state. **Projects:** category filter with animated reflow. **Stack:** icon tiles with an animated detail panel.
+
+**Animations (Motion):** scroll reveals, card hover, mobile menu, filters, chat panel, form success and error, admin dialogs, toasts and popovers, reading-progress bar. All respect "reduce motion". Content is visible by default, so a page can never come up blank.
 
 **Admin**
-- Draft and Publish, with a revision check so a second tab can't overwrite newer changes.
-- History records every published change field by field. Open a version to see old and new text, and put back a single old value or a removed item. The last 100 versions are kept.
-- Dashboard with status cards and suggestions. Each has a "?" explaining why it matters and how to do it, and a "Take me there" button to the exact item.
-- One consistent row layout (grip, content, actions), keyboard and touch drag-and-drop, Undo on delete, a Public/Hidden switch.
-- Icon picker (Simple Icons) with "Find icons automatically". Screenshot capture from a live URL.
-- Optional "Suggest a clearer version" on text fields: shows what changed, and you choose.
-- Preview, Inbox, backup and import, four admin themes plus System.
+- Dashboard leads with status and a clear action, then the top three suggestions (important first), then everything else grouped and collapsed.
+- Project editor is split into Overview, Case study and Media & links tabs, with a sticky header.
+- Titled section cards, avatar list rows, aligned fields, animated dialogs.
+- Fixed: a CSS class clash that put a 180 px blank gap above the editor fields.
+
+## From 1.0 (still included)
+
+Draft and Publish with a revision check, field-by-field History with restore, suggestions with "?" help, icon picker, screenshot capture, Groq "Ask AI" and writing help, inbox, backup and import, six public themes with light/dark/system, four admin themes.
 
 ## Safety notes
 
@@ -107,8 +59,10 @@ Netlify stops functions after about 10 seconds, so screenshot capture and AI cal
 
 ## Known limits
 
-- Never run through `npm install` and `next build` where it was written. Run `npm run typecheck` and `npm run build` first. Logic tests pass, and the public components were server-rendered successfully against stubs.
-- Not verified here: Groq and screenshot-service calls, the Simple Icons package shape, drag-and-drop and flow lines in a real browser, and Netlify behaviour.
+- Never run through `npm install` and `next build` where it was written. Run `npm run typecheck` and `npm run build` first.
+- Verified here: logic tests (including the diagram geometry), a type-check against stand-ins, and all 18 public and admin screens server-rendered and screenshotted in a real browser. React Flow and Motion were stubbed in those renders, so the live diagram and the animations have not been seen.
+- Not verified: Groq and screenshot-service calls, the Simple Icons package shape, drag-and-drop, and Netlify behaviour.
+- React Flow's small "React Flow" attribution is left visible, as its licence asks unless you subscribe to remove it.
 - Rate limits are per server instance. Add an edge limit for stronger protection.
 - Category chip colours come from the category name, not a managed list. Uploaded images aren't re-encoded or garbage-collected. No analytics.
-- Left for later: automated visual checks, "compare with published" inside editors, drag-to-position flow boxes.
+- Left for later: automated screenshot checks in CI, "compare with published" inside editors, drag-to-position flow boxes.

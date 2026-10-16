@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Icon } from "./Icon";
 import { useFocusTrap } from "./useFocusTrap";
@@ -36,10 +37,12 @@ export function AskWidget({ name, questions }: { name: string; questions: string
 
   return (
     <>
-      <button className="ask-fab" onClick={() => setOpen(true)} aria-haspopup="dialog"><Icon name="sparkles" size={18} /><span>Ask AI</span></button>
+      <motion.button className="ask-fab" onClick={() => setOpen(true)} aria-haspopup="dialog" whileHover={{ y: -3 }} whileTap={{ scale: 0.96 }}><Icon name="sparkles" size={18} /><span>Ask AI</span></motion.button>
+      <AnimatePresence>
       {open ? (
-        <div className="ask-wrap" onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}>
-          <div className="ask" ref={panel} role="dialog" aria-modal="true" aria-labelledby={tid}>
+        <motion.div className="ask-wrap" onMouseDown={(e: { target: unknown; currentTarget: unknown }) => e.target === e.currentTarget && setOpen(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div className="ask" ref={panel} role="dialog" aria-modal="true" aria-labelledby={tid}
+            initial={{ opacity: 0, y: 28, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.97 }} transition={{ type: "spring", stiffness: 320, damping: 28 }}>
             <header>
               <div><h2 id={tid}>Ask about {name.split(" ")[0]}&apos;s work</h2><small>AI answers from this site&apos;s content. It can make mistakes.</small></div>
               <button className="icon-btn" aria-label="Close" onClick={() => setOpen(false)}>✕</button>
@@ -60,9 +63,10 @@ export function AskWidget({ name, questions }: { name: string; questions: string
               <input id={`${tid}-q`} value={text} maxLength={400} placeholder="Ask a question…" autoComplete="off" onChange={(e) => setText(e.target.value)} />
               <button className="btn primary sm" disabled={busy || !text.trim()}>Send</button>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       ) : null}
+      </AnimatePresence>
     </>
   );
 }

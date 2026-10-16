@@ -1,28 +1,36 @@
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import type { Mode, NavItem, SearchEntry } from "@/lib/types";
 import { AskWidget } from "./AskWidget";
+import { Icon } from "./Icon";
+import { ScrollProgress } from "./ScrollProgress";
 import { SearchDialog } from "./SearchDialog";
+import { SiteFooter } from "./SiteFooter";
 import { ThemePicker } from "./ThemePicker";
 import { Toc } from "./Toc";
 
 const GROUPS = ["Portfolio", "How I work", "Reference"];
+/** Pages that sell and convert use the full-width top navigation. Reading and reference pages use the sidebar. */
+const LANDING = new Set(["/", "/projects", "/contact"]);
+const WIDE = new Set(["/stack", "/experience", "/how"]);
 const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/"));
 
 interface Props {
-  nav: NavItem[]; search: SearchEntry[]; name: string; role: string; updated: string;
-  resumeHref: string; palettes: string[]; defaultPalette: string; defaultMode: Mode;
+  nav: NavItem[]; search: SearchEntry[]; name: string; role: string; positioning: string; updated: string;
+  resumeHref: string; links: { label: string; href: string }[]; palettes: string[]; defaultPalette: string; defaultMode: Mode;
   preview: boolean; ask: { enabled: boolean; questions: string[] }; children: ReactNode;
 }
 
 function Pager({ nav }: { nav: NavItem[] }) {
   const pathname = usePathname();
-  const i = nav.findIndex((n) => n.href === "/" + (pathname.split("/")[1] ?? ""));
+  const reading = nav.filter((n) => !LANDING.has(n.href) || n.href === "/projects");
+  const i = reading.findIndex((n) => n.href === "/" + (pathname.split("/")[1] ?? ""));
   if (i < 0) return null;
-  const prev = nav[i - 1], next = nav[i + 1];
+  const prev = reading[i - 1], next = reading[i + 1];
   if (!prev && !next) return null;
   return (
     <div className="pager">
@@ -32,12 +40,14 @@ function Pager({ nav }: { nav: NavItem[] }) {
   );
 }
 
-const SearchIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>;
-const DownloadIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v11" /><path d="M7 11l5 5 5-5" /><path d="M5 20h14" /></svg>;
+const Logo = ({ size = 26 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 30 30" fill="none" aria-hidden="true"><circle cx="15" cy="15" r="12" stroke="var(--accent)" strokeWidth="2.2" strokeDasharray="4 3.2" /><circle cx="15" cy="15" r="4.2" fill="var(--accent)" /></svg>
+);
 
 export function SiteShell(p: Props) {
   const pathname = usePathname();
-  const landing = pathname === "/";
+  const landing = LANDING.has(pathname);
+  const wide = WIDE.has("/" + (pathname.split("/")[1] ?? "")) && pathname.split("/").length <= 2;
   const [closed, setClosed] = useState(false);
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -46,9 +56,7 @@ export function SiteShell(p: Props) {
 
   useEffect(() => { setOpen(false); setMenu(false); }, [pathname]);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setSearching(true); }
-    };
+    const onKey = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setSearching(true); } };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
@@ -59,8 +67,8 @@ export function SiteShell(p: Props) {
   const contact = p.nav.find((n) => n.id === "contact");
   const actions = (
     <>
-      <button className="icon-btn" onClick={() => setSearching(true)} aria-label="Search (Ctrl K)"><SearchIcon /></button>
-      {p.resumeHref ? <a className="icon-btn" href={p.resumeHref} target="_blank" rel="noopener noreferrer" aria-label="Download resume" title="Resume"><DownloadIcon /></a> : null}
+      <button className="icon-btn" onClick={() => setSearching(true)} aria-label="Search (Ctrl K)"><Icon name="search" size={19} /></button>
+      {p.resumeHref ? <a className="icon-btn" href={p.resumeHref} target="_blank" rel="noopener noreferrer" aria-label="Download resume" title="Resume"><Icon name="download" size={19} /></a> : null}
       <ThemePicker palettes={p.palettes} defaultPalette={p.defaultPalette} defaultMode={p.defaultMode} />
     </>
   );
@@ -70,36 +78,37 @@ export function SiteShell(p: Props) {
       {p.ask.enabled ? <AskWidget name={p.name} questions={p.ask.questions} /> : null}
     </>
   );
-  const banner = p.preview ? (
-    <div className="preview-bar" role="status">Previewing your draft. Hidden items are shown. <a href="/api/admin/preview?on=0&next=/admin">Exit preview</a></div>
-  ) : null;
+  const banner = p.preview ? <div className="preview-bar" role="status">Previewing your draft. Hidden items are shown. <a href="/api/admin/preview?on=0&next=/admin">Exit preview</a></div> : null;
 
   if (landing) {
     const links = p.nav.filter((n) => n.id !== "start");
     return (
       <div className="landing">
+        <ScrollProgress />
         {banner}
         <a className="skip" href="#main">Skip to content</a>
         <header className="lnav">
-          <Link href="/" className="lbrand">
-            <svg width="26" height="26" viewBox="0 0 30 30" fill="none" aria-hidden="true"><circle cx="15" cy="15" r="12" stroke="var(--accent)" strokeWidth="2.2" strokeDasharray="4 3.2" /><circle cx="15" cy="15" r="4.2" fill="var(--accent)" /></svg>
-            <b>{p.name}</b>
-          </Link>
-          <nav className="llinks" aria-label="Main">{links.map((n) => <Link key={n.id} href={n.href}>{n.title}</Link>)}</nav>
-          <div className="top-right">
-            {actions}
-            {contact ? <Link href={contact.href} className="btn primary sm hide-s">Get in touch</Link> : null}
-            <button className="icon-btn menu-btn" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu((m) => !m)}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
-            </button>
+          <div className="lnav-in">
+            <Link href="/" className="lbrand"><Logo /><b>{p.name}</b></Link>
+            <nav className="llinks" aria-label="Main">
+              {links.map((n) => <Link key={n.id} href={n.href} aria-current={isActive(pathname, n.href) ? "page" : undefined}>{n.title}</Link>)}
+            </nav>
+            <div className="top-right">
+              {actions}
+              {contact && pathname !== "/contact" ? <Link href={contact.href} className="btn primary sm hide-s">Get in touch</Link> : null}
+              <button className="icon-btn menu-btn" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu((m) => !m)}><Icon name={menu ? "arrow" : "dots"} size={19} /></button>
+            </div>
           </div>
+          <AnimatePresence>
+            {menu ? (
+              <motion.nav className="lmenu" aria-label="Menu" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }}>
+                {links.map((n) => <Link key={n.id} href={n.href}>{n.title}</Link>)}
+              </motion.nav>
+            ) : null}
+          </AnimatePresence>
         </header>
-        {menu ? <nav className="lmenu" aria-label="Menu">{links.map((n) => <Link key={n.id} href={n.href}>{n.title}</Link>)}</nav> : null}
         <main id="main">{p.children}</main>
-        <footer className="lfoot">
-          <span>{p.name}{p.role ? ` · ${p.role}` : ""}</span>
-          {p.updated ? <span>Last updated {p.updated}</span> : null}
-        </footer>
+        <SiteFooter nav={p.nav} name={p.name} role={p.role} positioning={p.positioning} links={p.links} updated={p.updated} />
         {dialog}
       </div>
     );
@@ -107,22 +116,14 @@ export function SiteShell(p: Props) {
 
   return (
     <div className={`shell${closed ? " nav-closed" : ""}${open ? " nav-open" : ""}`}>
+      <ScrollProgress />
       {banner}
       <a className="skip" href="#article">Skip to content</a>
-      <div className="accent-line" />
       <div className="scrim" onClick={() => setOpen(false)} />
 
       <aside className="sidebar" aria-label="Site navigation">
-        <div className="brand">
-          <Link href="/" className="lbrand">
-            <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true"><circle cx="15" cy="15" r="12" stroke="var(--accent)" strokeWidth="2.2" strokeDasharray="4 3.2" /><circle cx="15" cy="15" r="4.2" fill="var(--accent)" /></svg>
-            <b>Portfolio</b>
-          </Link>
-        </div>
-        <div className="side-meta">
-          <div className="row"><span>{p.name}</span></div>
-          <div>{p.role}{contact ? <> · <Link href={contact.href}>Contact</Link></> : null}</div>
-        </div>
+        <div className="brand"><Link href="/" className="lbrand"><Logo size={28} /><b>Portfolio</b></Link></div>
+        <div className="side-meta"><div className="row">{p.name}</div><div>{p.role}</div></div>
         <nav className="nav">
           {GROUPS.map((g) => {
             const items = p.nav.filter((n) => n.group === g);
@@ -156,9 +157,7 @@ export function SiteShell(p: Props) {
       <div className="main">
         <header className="topbar">
           <div className="top-left">
-            <button className="icon-btn" onClick={toggleNav} aria-label="Toggle navigation">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 5v14" /><path d="M17 8l-4 4 4 4" /></svg>
-            </button>
+            <button className="icon-btn" onClick={toggleNav} aria-label="Toggle navigation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 5v14" /><path d="M17 8l-4 4 4 4" /></svg></button>
             <span className="crumb">{here?.id === "projects" && child ? <>Projects / <b>{child.title}</b></> : <b>{here?.title ?? ""}</b>}</span>
           </div>
           <div className="top-right">
@@ -166,14 +165,14 @@ export function SiteShell(p: Props) {
             {contact ? <Link href={contact.href} className="btn primary sm hide-s">Get in touch</Link> : null}
           </div>
         </header>
-        <div className="wrap">
+        <div className={`wrap${wide ? " wide" : ""}`}>
           <article id="article">
             <Toc mobile />
             {p.children}
             <Pager nav={p.nav} />
             {p.updated ? <p className="foot">Last updated {p.updated}.</p> : null}
           </article>
-          <Toc />
+          {wide ? null : <Toc />}
         </div>
       </div>
       {dialog}

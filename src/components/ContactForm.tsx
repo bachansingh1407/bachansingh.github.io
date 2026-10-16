@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useId, useRef, useState } from "react";
 import { CONTACT_TOPICS } from "@/lib/defaults";
 import { L } from "@/lib/limits";
@@ -57,10 +58,14 @@ export function ContactForm() {
 
   if (state === "sent") {
     return (
-      <div className="form-done" role="status">
+      <motion.div className="form-done" role="status" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 260, damping: 22 }}>
+        <svg viewBox="0 0 52 52" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <motion.circle cx="26" cy="26" r="23" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.6 }} />
+          <motion.path d="M15 27l8 8 14-16" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.4, delay: 0.5 }} />
+        </svg>
         <b>Thanks, your message is in.</b>
         <span>I&apos;ll reply to {v.email.trim()} as soon as I can.</span>
-      </div>
+      </motion.div>
     );
   }
 
@@ -95,7 +100,9 @@ export function ContactForm() {
       <div className="hp" aria-hidden="true">
         <label>Leave this empty<input tabIndex={-1} autoComplete="off" value={v.website} onChange={set("website")} /></label>
       </div>
-      {state === "failed" ? <p className="ferr form-err" role="alert">{msg}</p> : null}
+      <AnimatePresence>
+        {state === "failed" ? <motion.p key="e" className="ferr form-err" role="alert" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: [0, -6, 6, -4, 4, 0] }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>{msg}</motion.p> : null}
+      </AnimatePresence>
       <button className="btn primary" disabled={state === "sending"}>{state === "sending" ? "Sending…" : "Send message"}</button>
     </form>
   );

@@ -51,66 +51,117 @@ function describe(path: string, c: Content): string {
 
 /* ---------- Dashboard ---------- */
 const DISMISS_KEY = "pf_admin_dismissed";
+const iconFor = (section: string) => SECTIONS.find((x) => x.id === section)?.icon ?? "sparkles";
 
-function SuggestionCard({ s, onGo, onDismiss }: { s: Suggestion; onGo: () => void; onDismiss: () => void }) {
+function SuggestionCard({ s, onGo, onDismiss, big = false }: { s: Suggestion; onGo: () => void; onDismiss: () => void; big?: boolean }) {
+  const help = (
+    <HelpPop label={`How to: ${s.title}`}>
+      <h4>Why it matters</h4><p>{s.why}</p>
+      <h4>How to do it</h4>
+      <ol>{s.how.map((h, i) => <li key={i}>{h}</li>)}</ol>
+      <button type="button" className="adm-btn primary sm" onClick={onGo}>Take me there</button>
+    </HelpPop>
+  );
+  if (big) {
+    return (
+      <div className={`next-card ${s.level}`}>
+        <span className="next-ico"><Icon name={iconFor(s.target.section)} size={20} /></span>
+        <div className="next-body">
+          <span className="sug-level">{s.level === "important" ? "Important" : "Nice to have"} · {sectionLabel(s.target.section)}</span>
+          <b>{s.title}</b>
+          <p>{s.why}</p>
+        </div>
+        <div className="next-actions">
+          <button type="button" className="adm-btn primary" onClick={onGo}>Take me there<Icon name="arrow" size={14} /></button>
+          {help}
+          <button type="button" className="adm-link" onClick={onDismiss}>Dismiss</button>
+        </div>
+      </div>
+    );
+  }
   return (
-    <div className={`sug ${s.level}`}>
-      <div className="sug-main">
-        <span className="sug-level">{s.level === "important" ? "Important" : "Nice to have"}</span>
-        <b>{s.title}</b>
-      </div>
-      <div className="sug-actions">
-        <HelpPop label={`How to: ${s.title}`}>
-          <h4>Why it matters</h4><p>{s.why}</p>
-          <h4>How to do it</h4>
-          <ol>{s.how.map((h, i) => <li key={i}>{h}</li>)}</ol>
-          <button type="button" className="adm-btn primary sm" onClick={onGo}>Take me there</button>
-        </HelpPop>
-        <button type="button" className="adm-btn primary sm" onClick={onGo}>Take me there<Icon name="arrow" size={14} /></button>
-        <button type="button" className="adm-link" onClick={onDismiss}>Dismiss</button>
-      </div>
+    <div className="sug-row">
+      <span className="sug-dot" data-level={s.level} aria-hidden="true" />
+      <b>{s.title}</b>
+      <div className="sug-actions">{help}<button type="button" className="adm-btn sm" onClick={onGo}>Take me there</button><button type="button" className="adm-link" onClick={onDismiss}>Dismiss</button></div>
     </div>
   );
 }
 
-export function DashboardSection({ issues, suggestions, unpublished, publishedAt, unread, onGo, onSection }: {
+export function DashboardSection({ issues, suggestions, unpublished, publishedAt, unread, onGo, onSection, onPublish }: {
   issues: Issue[]; suggestions: Suggestion[]; unpublished: boolean; publishedAt: string; unread: number;
-  onGo: (path: string) => void; onSection: (id: SectionId) => void;
+  onGo: (path: string) => void; onSection: (id: SectionId) => void; onPublish: () => void;
 }) {
   const { c } = useAdmin();
   const errors = issues.filter((i) => i.level === "error");
   const [dismissed, setDismissed] = useState<string[]>([]);
   useEffect(() => { try { setDismissed(JSON.parse(localStorage.getItem(DISMISS_KEY) ?? "[]") as string[]); } catch { /* storage unavailable */ } }, []);
   const dismiss = (id: string) => { const next = [...dismissed, id]; setDismissed(next); try { localStorage.setItem(DISMISS_KEY, JSON.stringify(next)); } catch { /* ignore */ } };
-  const open = suggestions.filter((x) => !dismissed.includes(x.id));
+
+  // Important first, then the rest in their original order.
+  const open = suggestions.filter((x) => !dismissed.includes(x.id)).sort((a, b) => Number(b.level === "important") - Number(a.level === "important"));
+  const top = open.slice(0, 3), more = open.slice(3);
+  const important = open.filter((x) => x.level === "important").length;
+  const groups = more.reduce<Record<string, Suggestion[]>>((acc, x) => { (acc[x.target.section] ||= []).push(x); return acc; }, {});
   const go = (s: Suggestion) => onGo(s.target.uid ? `${s.target.section}.${s.target.uid}` : s.target.section);
   const when = publishedAt ? new Date(publishedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "Never";
 
+  const headline = errors.length ? `${errors.length} ${errors.length === 1 ? "thing needs" : "things need"} fixing before you can publish`
+    : unpublished ? "You have changes that aren't live yet" : "Your site is live and up to date";
+
   return (
     <>
+      <section className={`dash-hero${errors.length ? " bad" : ""}`}>
+        <div>
+          <h3>{headline}</h3>
+          <p>{open.length ? `${important} important and ${open.length - important} nice-to-have suggestions are open.` : "No open suggestions. Nice work."}</p>
+        </div>
+        <div className="adm-row">
+          {unpublished && !errors.length ? <button type="button" className="adm-btn primary" onClick={onPublish}>Publish…</button> : null}
+          <button type="button" className="adm-btn" onClick={() => onSection("preview")}><Icon name="eye" size={15} />Preview draft</button>
+          <a className="adm-btn" href="/" target="_blank" rel="noopener noreferrer"><Icon name="link" size={15} />View live site</a>
+        </div>
+      </section>
+
       <div className="stats">
-        <div className="stat"><small>Status</small><b>{unpublished ? "Unpublished changes" : "Live and up to date"}</b></div>
         <div className="stat"><small>Last published</small><b>{when}</b></div>
         <button className="stat link" onClick={() => onSection("inbox")}><small>Unread messages</small><b>{unread}</b></button>
+        <button className="stat link" onClick={() => onSection("projects")}><small>Projects</small><b>{c.projects.filter((p) => p.visible).length} public</b></button>
         <div className={`stat${errors.length ? " bad" : ""}`}><small>To fix before publishing</small><b>{errors.length}</b></div>
       </div>
 
       {errors.length ? (
         <section aria-labelledby="fix-h">
           <h3 className="adm-h3" id="fix-h">Fix before publishing</h3>
-          {errors.slice(0, 10).map((i, n) => (
+          {errors.slice(0, 8).map((i, n) => (
             <div key={n} className="adm-warn err adm-row" style={{ justifyContent: "space-between" }}>
               <span><b>{describe(i.path, c)}:</b> {i.message}</span>
               <button className="adm-btn sm" onClick={() => onGo(i.path)}>Take me there</button>
             </div>
           ))}
-          {errors.length > 10 ? <p className="adm-muted">…and {errors.length - 10} more.</p> : null}
+          {errors.length > 8 ? <p className="adm-muted">…and {errors.length - 8} more.</p> : null}
         </section>
-      ) : <div className="adm-ok">{unpublished ? "No blocking problems. You can publish." : "Everything is published."}</div>}
+      ) : null}
 
-      <h3 className="adm-h3">Suggestions{open.length ? ` (${open.length})` : ""}</h3>
-      <p className="adm-muted adm-note">Advice only, nothing here blocks publishing. Press <b>?</b> to see why it matters and how to do it.</p>
-      {open.length === 0 ? <div className="adm-ok">Nothing to suggest right now.</div> : open.map((x) => <SuggestionCard key={x.id} s={x} onGo={() => go(x)} onDismiss={() => dismiss(x.id)} />)}
+      {top.length ? (
+        <section aria-labelledby="next-h">
+          <h3 className="adm-h3" id="next-h">Do these next</h3>
+          <div className="next-grid">{top.map((x) => <SuggestionCard big key={x.id} s={x} onGo={() => go(x)} onDismiss={() => dismiss(x.id)} />)}</div>
+        </section>
+      ) : null}
+
+      {more.length ? (
+        <section>
+          <h3 className="adm-h3">More ideas ({more.length})</h3>
+          {Object.entries(groups).map(([sec, list]) => (
+            <details key={sec} className="sug-group">
+              <summary><Icon name={iconFor(sec)} size={16} />{sectionLabel(sec)}<span className="adm-count info">{list.length}</span></summary>
+              {list.map((x) => <SuggestionCard key={x.id} s={x} onGo={() => go(x)} onDismiss={() => dismiss(x.id)} />)}
+            </details>
+          ))}
+        </section>
+      ) : null}
+
       {dismissed.length ? <button type="button" className="adm-link" onClick={() => { setDismissed([]); try { localStorage.removeItem(DISMISS_KEY); } catch { /* ignore */ } }}>Show dismissed suggestions ({dismissed.length})</button> : null}
     </>
   );

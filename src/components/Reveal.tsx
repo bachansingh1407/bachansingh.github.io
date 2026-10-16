@@ -1,26 +1,34 @@
 "use client";
 
+import { motion, useInView } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /**
- * Fades content in as it scrolls into view. Content is visible by default (server render, no JavaScript,
- * reduced motion). It only hides itself when it is confirmed to be below the fold, and a timer always shows it.
+ * Scroll-in animation. Content is visible in the server HTML and stays visible if scripts fail, the
+ * visitor prefers reduced motion, or it is already on screen. It only hides itself once it is confirmed
+ * to be below the fold, and a timer always shows it, so a page can never be left blank.
  */
-export function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
+export function Reveal({ children, delay = 0, className = "", y = 22 }: { children: ReactNode; delay?: number; className?: string; y?: number }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [state, setState] = useState<"show" | "armed" | "in">("show");
+  const seen = useInView(ref, { once: true, margin: "0px 0px -8% 0px" });
+  const [armed, setArmed] = useState(false);
+  const [forced, setForced] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || !("IntersectionObserver" in window)) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (el.getBoundingClientRect().top < window.innerHeight * 0.95) return;
-    setState("armed");
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setState("in"); io.disconnect(); } }, { threshold: 0.05 });
-    io.observe(el);
-    const failsafe = setTimeout(() => setState("in"), 5000);
-    return () => { io.disconnect(); clearTimeout(failsafe); };
+    setArmed(true);
+    const failsafe = setTimeout(() => setForced(true), 5000);
+    return () => clearTimeout(failsafe);
   }, []);
 
-  return <div ref={ref} className={`reveal ${state}${className ? " " + className : ""}`} style={{ transitionDelay: state === "in" ? `${delay}ms` : "0ms" }}>{children}</div>;
+  const hidden = armed && !seen && !forced;
+  return (
+    <motion.div ref={ref} className={className} initial={false}
+      animate={hidden ? { opacity: 0, y } : { opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: hidden ? 0 : delay, ease: [0.21, 0.47, 0.32, 0.98] }}>
+      {children}
+    </motion.div>
+  );
 }

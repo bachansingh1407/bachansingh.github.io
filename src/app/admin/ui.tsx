@@ -8,6 +8,7 @@ import {
   SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { AnimatePresence, motion } from "motion/react";
 import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Icon } from "@/components/Icon";
 import { useFocusTrap } from "@/components/useFocusTrap";
@@ -121,7 +122,7 @@ export function VisibilitySwitch({ value, onChange }: { value: boolean; onChange
 }
 export function ToggleSwitch({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button type="button" role="switch" aria-checked={checked} className={`vis plain${checked ? " on" : ""}`} onClick={() => onChange(!checked)}>
+    <button type="button" role="switch" aria-checked={checked} className={`vis flat${checked ? " on" : ""}`} onClick={() => onChange(!checked)}>
       <span>{label}</span><i className="knob" aria-hidden="true" />
     </button>
   );
@@ -163,7 +164,11 @@ export function HelpPop({ label, children }: { label: string; children: ReactNod
   return (
     <span className="helppop" ref={box}>
       <button type="button" className="help-btn" aria-label={label} aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)}>?</button>
-      {open ? <div className="helppop-card" id={id} role="region" aria-label={label}>{children}</div> : null}
+      <AnimatePresence>
+        {open ? (
+          <motion.div className="helppop-card" id={id} role="region" aria-label={label} initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4, scale: 0.98 }} transition={{ duration: 0.16 }}>{children}</motion.div>
+        ) : null}
+      </AnimatePresence>
     </span>
   );
 }
@@ -313,6 +318,7 @@ export function MasterDetail<T extends { uid: string }>({ section, noun, items, 
     return (
       <div className={`adm-li${cur?.uid === item.uid ? " sel" : ""}${dragging ? " drag" : ""}`}>
         {handle}
+        <span className="adm-av" aria-hidden="true">{(titleOf(item) || noun).trim()[0]?.toUpperCase() ?? "?"}</span>
         <button type="button" className="adm-li-main" onClick={() => select(section, item.uid)} aria-current={cur?.uid === item.uid}>
           <b>{titleOf(item) || `Untitled ${noun}`}</b>
           <span>{[visibleOf ? (visibleOf(item) ? "Public" : "Hidden") : "", metaOf?.(item) ?? "", errs ? `${errs} to fix` : ""].filter(Boolean).join(" · ")}</span>
@@ -358,35 +364,76 @@ export function MasterDetail<T extends { uid: string }>({ section, noun, items, 
   );
 }
 
-/* ---------- dialogs & toast ---------- */
+/* ---------- dialogs, toast, tabs, sections ---------- */
 export function ConfirmModal({ open, title, body, confirmLabel, danger, onConfirm, onCancel, children }: {
   open: boolean; title: string; body?: string; confirmLabel: string; danger?: boolean; onConfirm: () => void; onCancel: () => void; children?: ReactNode;
 }) {
   const ref = useFocusTrap<HTMLDivElement>(open, onCancel);
   const tid = useId();
-  if (!open) return null;
   return (
-    <div className="modal adm-modal" onMouseDown={(e) => e.target === e.currentTarget && onCancel()}>
-      <div className="panel" ref={ref} role="alertdialog" aria-modal="true" aria-labelledby={tid}>
-        <h2 id={tid}>{title}</h2>
-        {body ? <p className="adm-muted" style={{ margin: 0 }}>{body}</p> : null}
-        {children}
-        <div className="adm-row">
-          <button type="button" className="adm-btn" onClick={onCancel}>Cancel</button>
-          <button type="button" className={`adm-btn ${danger ? "danger" : "primary"}`} onClick={onConfirm}>{confirmLabel}</button>
-        </div>
-      </div>
-    </div>
+    <AnimatePresence>
+      {open ? (
+        <motion.div className="modal adm-modal" onMouseDown={(e: { target: unknown; currentTarget: unknown }) => e.target === e.currentTarget && onCancel()}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+          <motion.div className="panel" ref={ref} role="alertdialog" aria-modal="true" aria-labelledby={tid}
+            initial={{ opacity: 0, y: 18, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.98 }} transition={{ type: "spring", stiffness: 380, damping: 30 }}>
+            <h2 id={tid}>{title}</h2>
+            {body ? <p className="adm-muted" style={{ margin: 0 }}>{body}</p> : null}
+            {children}
+            <div className="adm-row">
+              <button type="button" className="adm-btn" onClick={onCancel}>Cancel</button>
+              <button type="button" className={`adm-btn ${danger ? "danger solid" : "primary"}`} onClick={onConfirm}>{confirmLabel}</button>
+            </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }
 
 export function Toast({ text, undo, onClose }: { text: string; undo?: () => void; onClose: () => void }) {
   useEffect(() => { const t = setTimeout(onClose, undo ? 10000 : 5000); return () => clearTimeout(t); }, [text, undo, onClose]);
   return (
-    <div className="toast" role="status" aria-live="polite">
+    <motion.div className="toast" role="status" aria-live="polite" initial={{ opacity: 0, y: 24, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12 }} transition={{ type: "spring", stiffness: 380, damping: 30 }}>
       <span>{text}</span>
       {undo ? <button type="button" onClick={() => { undo(); onClose(); }}>Undo</button> : null}
       <button type="button" aria-label="Dismiss" onClick={onClose}>✕</button>
+    </motion.div>
+  );
+}
+
+/** Accessible tabs: arrow keys move between them, and the panel crossfades. */
+export function Tabs({ tabs, value, onChange, label }: { tabs: { id: string; label: string; badge?: number }[]; value: string; onChange: (id: string) => void; label: string }) {
+  const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const onKey = (e: { key: string; preventDefault: () => void }, i: number) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    const n = (i + (e.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    onChange(tabs[n].id);
+    refs.current[tabs[n].id]?.focus();
+  };
+  return (
+    <div className="tabs" role="tablist" aria-label={label}>
+      {tabs.map((t, i) => (
+        <button key={t.id} type="button" id={`tab-${t.id}`} role="tab" aria-selected={value === t.id} aria-controls={`panel-${t.id}`} tabIndex={value === t.id ? 0 : -1}
+          ref={(el: HTMLButtonElement | null) => { refs.current[t.id] = el; }} className="tab" onClick={() => onChange(t.id)} onKeyDown={(e: { key: string; preventDefault: () => void }) => onKey(e, i)}>
+          {t.label}{t.badge ? <span className="adm-count" aria-label={`${t.badge} to fix`}>{t.badge}</span> : null}
+        </button>
+      ))}
     </div>
+  );
+}
+export function TabPanel({ id, value, children }: { id: string; value: string; children: ReactNode }) {
+  if (id !== value) return null;
+  return <motion.div key={id} id={`panel-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }}>{children}</motion.div>;
+}
+
+/** A titled card: heading and description on top, fields below. */
+export function Section({ title, desc, actions, children }: { title: string; desc?: string; actions?: ReactNode; children: ReactNode }) {
+  return (
+    <section className="adm-card">
+      <header className="adm-card-h"><div><h3>{title}</h3>{desc ? <p>{desc}</p> : null}</div>{actions ? <div className="adm-row">{actions}</div> : null}</header>
+      <div className="adm-card-b">{children}</div>
+    </section>
   );
 }

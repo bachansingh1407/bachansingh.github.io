@@ -10,7 +10,7 @@ function secret(): string | null {
   return s && s.length >= 16 ? s : null;
 }
 export function authConfigured(): boolean {
-  return Boolean(process.env.NEXT_PUBLIC_ADMIN_PASSWORD) && secret() !== null;
+  return Boolean(process.env.ADMIN_PASSWORD) && secret() !== null;
 }
 function sign(payload: string): string {
   return createHmac("sha256", secret() ?? "").update(payload).digest("base64url");
@@ -36,7 +36,7 @@ export async function isPreview(): Promise<boolean> {
   return jar.get(PREVIEW_COOKIE)?.value === "1" && verifySessionValue(jar.get(SESSION_COOKIE)?.value);
 }
 export function checkPassword(input: string): boolean {
-  const real = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
+  const real = process.env.ADMIN_PASSWORD;
   if (!real) return false;
   return timingSafeEqual(createHash("sha256").update(input).digest(), createHash("sha256").update(real).digest());
 }

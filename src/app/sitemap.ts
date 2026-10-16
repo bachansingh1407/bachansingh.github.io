@@ -5,7 +5,7 @@ import { publishedOnce } from "@/lib/site";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const base = (process.env.SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
   const pub = toPublic(await publishedOnce());
   const lastModified = new Date(pub.publishedAt || pub.updated);
   return [

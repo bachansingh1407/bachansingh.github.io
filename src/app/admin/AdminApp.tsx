@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { applyChange } from "@/lib/changes";
@@ -20,12 +21,12 @@ import { AdminCtx, ConfirmModal, PageHeader, Toast, type Ctx } from "./ui";
 const JSON_HEADERS = { "Content-Type": "application/json" };
 const GROUPS = ["Overview", "Content", "Site", "Inbox & tools"];
 
-export function AdminApp({ initialDraft, initialPublished, aiConfigured }: { initialDraft: Content; initialPublished: Content; aiConfigured: boolean }) {
+export function AdminApp({ initialDraft, initialPublished, aiConfigured, initialSection, initialSelected }: { initialDraft: Content; initialPublished: Content; aiConfigured: boolean; initialSection?: string; initialSelected?: Record<string, string> }) {
   const [c, setC] = useState(initialDraft);
   const [published, setPublished] = useState(initialPublished);
   const [dirty, setDirty] = useState(false);
-  const [section, setSection] = useState<SectionId>("dashboard");
-  const [selected, setSelected] = useState<Record<string, string>>({});
+  const [section, setSection] = useState<SectionId>((SECTIONS.some((x) => x.id === initialSection) ? initialSection : "dashboard") as SectionId);
+  const [selected, setSelected] = useState<Record<string, string>>(initialSelected ?? {});
   const [toast, setToast] = useState<{ text: string; undo?: () => void; n: number } | null>(null);
   const [busy, setBusy] = useState<"" | "save" | "publish">("");
   const [pubOpen, setPubOpen] = useState(false);
@@ -202,7 +203,7 @@ export function AdminApp({ initialDraft, initialPublished, aiConfigured }: { ini
 
         <div className="adm-col">
           <header className="adm-top">
-            <div className="adm-row"><span className="adm-crumb">{sectionLabel(section)}</span>{chip}</div>
+            <div className="adm-row">{chip}</div>
             <div className="adm-row">
               <button className="adm-btn sm" onClick={() => setPalette(true)} aria-label="Search the admin (Ctrl K)"><Icon name="search" size={14} />Search</button>
               <AdminThemeSwitch />
@@ -213,7 +214,8 @@ export function AdminApp({ initialDraft, initialPublished, aiConfigured }: { ini
 
           <main className="adm-main">
             <PageHeader title={def.label} description={def.desc} />
-            {section === "dashboard" && <DashboardSection issues={issues} suggestions={sugg} unpublished={unpublished} publishedAt={published.publishedAt} unread={unread} onGo={goTo} onSection={setSection} />}
+            <motion.div key={section} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: [0.21, 0.47, 0.32, 0.98] }}>
+            {section === "dashboard" && <DashboardSection issues={issues} suggestions={sugg} unpublished={unpublished} publishedAt={published.publishedAt} unread={unread} onGo={goTo} onSection={setSection} onPublish={() => setPubOpen(true)} />}
             {section === "profile" && <ProfileSection />}
             {section === "pages" && <PagesSection />}
             {section === "about" && <AboutSection />}
@@ -229,11 +231,12 @@ export function AdminApp({ initialDraft, initialPublished, aiConfigured }: { ini
             {section === "history" && <HistorySection dirty={dirty} baseRev={c.rev} onRestored={(d) => { seq.current += 1; setC(d); setDirty(false); }} onRestoreChange={restoreChange} />}
             {section === "preview" && <PreviewSection dirty={dirty} pages={c.pages} />}
             {section === "advanced" && <AdvancedSection onImport={(next) => { set((d) => { Object.assign(d, next, { rev: d.rev }); }); notify("Backup loaded into the editor. Review it, then save and publish."); }} />}
+            </motion.div>
           </main>
         </div>
       </div>
 
-      {toast ? <Toast key={toast.n} text={toast.text} undo={toast.undo} onClose={() => setToast(null)} /> : null}
+      <AnimatePresence>{toast ? <Toast key={toast.n} text={toast.text} undo={toast.undo} onClose={() => setToast(null)} /> : null}</AnimatePresence>
       <CommandPalette open={palette} onClose={() => setPalette(false)} commands={commands} />
 
       <ConfirmModal open={pubOpen} title={errors.length ? "Fix these before publishing" : "Publish your changes?"}

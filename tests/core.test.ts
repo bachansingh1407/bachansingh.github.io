@@ -6,7 +6,7 @@ import { checkUrl, isValidEmail, validateContent, errorsOnly } from "../src/lib/
 import { hit } from "../src/lib/ratelimit";
 import { sniff } from "../src/lib/media";
 import { applyChange, diffContent, wordDiff } from "../src/lib/changes";
-import { layoutFlow } from "../src/lib/flow";
+import { buildFlow, layoutFlow, NODE_H, NODE_W, GAP_X, GAP_Y } from "../src/lib/flow";
 import { buildContext, cleanHistory } from "../src/lib/ai";
 import { isPublicHttpsUrl } from "../src/lib/screenshot";
 import { isSafeSvgPath } from "../src/lib/icons";
@@ -86,9 +86,24 @@ ok(withIcon.stack[0].items[0].icon?.slug === "react" && withIcon.stack[0].items[
 const nodes = ["a", "b", "c", "d", "e", "f", "g"].map((id, i, all) => ({ id, title: id, text: "", kind: "process" as const, icon: "", from: i ? [all[i - 1]] : [], chips: [] }));
 const lay = layoutFlow(nodes, 4);
 ok(lay[3].col === 3 && lay[3].band === 0 && lay[4].col === 0 && lay[4].band === 1, "flow wraps into bands");
+const snake = layoutFlow(nodes, 4, true);
+ok(snake[3].col === 3 && snake[4].col === 3 && snake[5].col === 2 && snake[6].col === 1, "snake: second band runs right-to-left");
 const branch = layoutFlow([{ ...nodes[0] }, { ...nodes[1], from: ["a"] }, { ...nodes[2], from: ["a"] }], 4);
 ok(branch[1].level === 1 && branch[2].level === 1 && branch[2].row === 1, "branches share a column");
 ok(layoutFlow([{ ...nodes[0], from: ["b"] }, { ...nodes[1], from: ["a"] }], 3).length === 2, "cycles do not hang");
+
+// React Flow geometry
+const bf = buildFlow(nodes, 1200);
+ok(bf.per === 4 && bf.nodes.length === 7 && bf.edges.length === 6, "buildFlow counts");
+ok(bf.nodes[0].position.x === 0 && bf.nodes[1].position.x === NODE_W + GAP_X && bf.nodes[4].position.y === NODE_H + GAP_Y, "buildFlow positions");
+ok(bf.edges[0].sourceHandle === "sr" && bf.edges[0].targetHandle === "tl", "forward edge leaves right, enters left");
+ok(bf.edges[3].sourceHandle === "sb" && bf.edges[3].targetHandle === "tt", "band hand-over drops straight down");
+ok(bf.edges[4].sourceHandle === "sl" && bf.edges[4].targetHandle === "tr", "second band runs backwards");
+const overlap = bf.nodes.some((a, i) => bf.nodes.some((b, j) => i < j && Math.abs(a.position.x - b.position.x) < NODE_W && Math.abs(a.position.y - b.position.y) < NODE_H));
+ok(!overlap, "no two boxes overlap");
+const narrow = buildFlow(nodes, 340);
+ok(narrow.per === 1 && narrow.zoom === 1 && narrow.nodes.every((n) => n.position.x === 0), "phone: single column at full size");
+ok(buildFlow(nodes, 600).zoom <= 1 && buildFlow([], 800).nodes.length === 0, "tiny and empty inputs are safe");
 
 // Change tracking: old text is recoverable
 const v1 = normalizeContent(DEFAULT_CONTENT);

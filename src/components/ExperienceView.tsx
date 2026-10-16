@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { WorkEntry } from "@/lib/types";
 import type { FlowNode } from "@/lib/flow";
-import { FlowGraph } from "./FlowGraph";
+import { Flow } from "./Flow";
 import { Icon } from "./Icon";
 import { RichText } from "./RichText";
 
@@ -22,7 +22,7 @@ export function ExperienceView({ roles }: { roles: WorkEntry[] }) {
           <button key={id} role="radio" aria-checked={view === id} className={view === id ? "on" : ""} onClick={() => setView(id)}>{l}</button>
         ))}
       </div>
-      {view === "flow" ? <FlowGraph nodes={nodes} label="Experience as a flow" /> : (
+      {view === "flow" ? <div className="flowframe"><Flow nodes={nodes} label="Experience as a flow" /></div> : (
         <ol className="timeline">
           {roles.map((w) => (
             <li key={w.uid} className="tl-item">

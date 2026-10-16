@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BrandIcon, Icon } from "@/components/Icon";
-import { FlowGraph } from "@/components/FlowGraph";
+import { Flow } from "@/components/Flow";
 import { CASE_LABELS, EMPTY_CASE } from "@/lib/defaults";
 import { STEP_ICONS } from "@/lib/icons";
 import { L } from "@/lib/limits";
@@ -10,13 +10,12 @@ import { checkUrl } from "@/lib/validate";
 import { newUid } from "@/lib/uid";
 import type { CaseStudy, Project, StackGroup, StackIcon, StackItem, Step, StepKind, Testimonial, WorkEntry } from "@/lib/types";
 import {
-  Badge, Field, ImageField, ItemRow, MasterDetail, NumberField, RowMenu, SortableList, ToggleSwitch, VisibilitySwitch, uploadFile, useAdmin,
+  Field, ImageField, ItemRow, MasterDetail, NumberField, RowMenu, Section, SortableList, TabPanel, Tabs, ToggleSwitch, VisibilitySwitch, uploadFile, useAdmin,
 } from "./ui";
 
 const lines = (a: string[]) => a.join("\n");
 const toLines = (v: string) => v.split("\n");
 const Sub = ({ children }: { children: ReactNode }) => <h3 className="adm-h3">{children}</h3>;
-const Card = ({ children }: { children: ReactNode }) => <div className="adm-card">{children}</div>;
 const Note = ({ children }: { children: ReactNode }) => <p className="adm-muted adm-note">{children}</p>;
 
 /* ---------- Profile ---------- */
@@ -25,20 +24,20 @@ export function ProfileSection() {
   const p = c.profile;
   return (
     <>
-      <Card>
+      <Section title="Headline" desc="The first thing visitors read on your home page.">
         <div className="adm-grid">
           <Field label="Name" path="profile.name" max={L.name} value={p.name} onChange={(v) => set((d) => { d.profile.name = v; })} />
           <Field label="Role" path="profile.role" max={L.role} value={p.role} onChange={(v) => set((d) => { d.profile.role = v; })} />
           <Field label="Location (optional)" path="profile.location" max={L.location} value={p.location} onChange={(v) => set((d) => { d.profile.location = v; })} />
         </div>
-        <Field ai label="Positioning statement (home page heading)" path="profile.positioning" max={L.positioning} rows={2} value={p.positioning}
+        <Field ai label="Positioning statement" path="profile.positioning" max={L.positioning} rows={2} value={p.positioning}
           hint="One specific sentence. Every claim needs a real example behind it." onChange={(v) => set((d) => { d.profile.positioning = v; })} />
         <Field ai label="Introduction" path="profile.intro" max={L.intro} rows={4} value={p.intro} onChange={(v) => set((d) => { d.profile.intro = v; })} />
-      </Card>
-      <Card>
-        <ImageField label="Hero photo (optional)" media={p.photo} alt={p.photoAlt} altPath="profile.photoAlt" hint="Without a photo, the home page shows a graphic."
+      </Section>
+      <Section title="Photo" desc="Optional. Without one, your initials are shown.">
+        <ImageField label="Hero photo" media={p.photo} alt={p.photoAlt} altPath="profile.photoAlt" hint="A clear, well-lit headshot works best."
           onChange={(v) => set((d) => { d.profile.photo = v.media; d.profile.photoAlt = v.alt; })} />
-      </Card>
+      </Section>
     </>
   );
 }
@@ -65,11 +64,10 @@ export function PagesSection() {
 export function AboutSection() {
   const { c, set } = useAdmin();
   return (
-    <Card>
-      <Field ai label="About text" path="about" max={L.about} rows={16} value={c.about}
+    <Section title="About text" desc="Your email, GitHub and LinkedIn links appear beside this text. Switch that on or off in Contact & resume.">
+      <Field ai label="Text" path="about" max={L.about} rows={16} value={c.about}
         hint="Blank line = new paragraph. Lines starting with “- ” become a bullet list. Leave empty to hide the page." onChange={(v) => set((d) => { d.about = v; })} />
-      <Note>Your email, GitHub and LinkedIn links appear beside this text. Switch that on or off in Contact & resume.</Note>
-    </Card>
+    </Section>
   );
 }
 
@@ -114,98 +112,117 @@ export function WorkSection() {
 }
 
 /* ---------- Projects ---------- */
-export function ProjectsSection() {
-  const { c, set, remove, select, notify } = useAdmin();
-  const upd = (uid: string, fn: (p: Project) => void) => set((d) => { const x = d.projects.find((i) => i.uid === uid); if (x) fn(x); });
-  const fileRef = useRef<HTMLInputElement>(null);
+function ProjectEditor({ p }: { p: Project }) {
+  const { set, remove, notify, count } = useAdmin();
+  const upd = (fn: (x: Project) => void) => set((d) => { const x = d.projects.find((i) => i.uid === p.uid); if (x) fn(x); });
+  const [tab, setTab] = useState("overview");
   const [busy, setBusy] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const b = `projects.${p.uid}`;
+  const errs = (keys: string[]) => keys.reduce((n, k) => n + count(`${b}.${k}`), 0);
+  const canCapture = Boolean(p.demoUrl) && !checkUrl(p.demoUrl);
 
-  async function addShot(uid: string, f: File | undefined) {
+  async function addShot(f: File | undefined) {
     if (!f) return;
     setBusy("shot");
     try {
       const r = await uploadFile(f);
       if (!r.type.startsWith("image/")) throw new Error("That is not an image.");
-      upd(uid, (x) => { x.images.push({ uid: newUid(), media: r.id, alt: "" }); });
+      upd((x) => { x.images.push({ uid: newUid(), media: r.id, alt: "" }); });
     } catch (e) { notify(e instanceof Error ? e.message : "Upload failed."); }
     finally { setBusy(""); if (fileRef.current) fileRef.current.value = ""; }
   }
-  async function capture(p: Project) {
+  async function capture() {
     setBusy("capture");
     try {
       const res = await fetch("/api/admin/capture", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: p.demoUrl }) });
       const data = (await res.json().catch(() => ({}))) as { id?: string; at?: string; error?: string };
       if (!res.ok || !data.id) throw new Error(data.error ?? "Capture failed.");
-      upd(p.uid, (x) => { x.cover = data.id!; x.coverCapturedAt = data.at ?? ""; if (!x.coverAlt) x.coverAlt = `Screenshot of the ${x.name} live site`; });
+      upd((x) => { x.cover = data.id!; x.coverCapturedAt = data.at ?? ""; if (!x.coverAlt) x.coverAlt = `Screenshot of the ${x.name} live site`; });
       notify("Preview captured. Save the draft to keep it.");
     } catch (e) { notify(e instanceof Error ? e.message : "Capture failed."); }
     finally { setBusy(""); }
   }
 
   return (
+    <>
+      <div className="adm-editor-head">
+        <h2>{p.name || "Untitled project"}</h2>
+        <div className="adm-row"><ToggleSwitch label="Featured on home" checked={p.featured} onChange={(v) => upd((x) => { x.featured = v; })} /><VisibilitySwitch value={p.visible} onChange={(v) => upd((x) => { x.visible = v; })} /></div>
+      </div>
+      <Tabs label="Project sections" value={tab} onChange={setTab} tabs={[
+        { id: "overview", label: "Overview", badge: errs(["name", "id", "category", "status", "summary", "outcomeLine", "tech", "scope"]) },
+        { id: "case", label: "Case study", badge: errs(["caseStudy"]) },
+        { id: "media", label: "Media & links", badge: errs(["cover", "coverAlt", "images", "demoUrl", "repoUrl", "sourceNote"]) },
+      ]} />
+
+      <TabPanel id="overview" value={tab}>
+        <div className="adm-grid">
+          <Field label="Name" path={`${b}.name`} max={L.projectName} value={p.name} onChange={(v) => upd((x) => { x.name = v; })} />
+          <Field label="URL slug" path={`${b}.id`} max={L.slug} value={p.id} hint="Used in the page address." onChange={(v) => upd((x) => { x.id = v; })} />
+          <Field label="Category" path={`${b}.category`} max={L.category} value={p.category} onChange={(v) => upd((x) => { x.category = v; })} />
+          <Field label="Status label (optional)" path={`${b}.status`} max={L.status} value={p.status} onChange={(v) => upd((x) => { x.status = v; })} />
+        </div>
+        <Field ai label="Summary" path={`${b}.summary`} max={L.summary} rows={3} value={p.summary} onChange={(v) => upd((x) => { x.summary = v; })} />
+        <Field label="One-line outcome (shown on the project card)" path={`${b}.outcomeLine`} max={L.outcomeLine} value={p.outcomeLine} hint="Only a result you can stand behind. Leave empty if unsure." onChange={(v) => upd((x) => { x.outcomeLine = v; })} />
+        <div className="adm-grid">
+          <Field label="Technologies (one per line)" path={`${b}.tech`} rows={5} value={lines(p.tech)} hint={`Up to ${L.tech}.`} onChange={(v) => upd((x) => { x.tech = toLines(v); })} />
+          <Field label="Scope / features (one per line)" path={`${b}.scope`} rows={5} value={lines(p.scope)} hint="Keep only what is true." onChange={(v) => upd((x) => { x.scope = toLines(v); })} />
+        </div>
+      </TabPanel>
+
+      <TabPanel id="case" value={tab}>
+        <Note>Write it the way you would explain it to a colleague: what it was, what you did, why you chose that way, how you checked it worked.</Note>
+        {(Object.keys(CASE_LABELS) as (keyof CaseStudy)[]).map((k) => (
+          <Field ai key={k} label={CASE_LABELS[k]} path={`${b}.caseStudy.${k}`} max={L.caseSection} rows={k === "decisions" ? 7 : 5} value={p.caseStudy[k]}
+            hint={k === "decisions" ? "Options considered, choice made, reason." : undefined} onChange={(v) => upd((x) => { x.caseStudy[k] = v; })} />
+        ))}
+      </TabPanel>
+
+      <TabPanel id="media" value={tab}>
+        <Section title="Live link and preview" desc="Add the live URL, then capture a preview image of it.">
+          <div className="adm-grid">
+            <Field label="Live demo URL" path={`${b}.demoUrl`} value={p.demoUrl} placeholder="https://" onChange={(v) => upd((x) => { x.demoUrl = v; })} />
+            <Field label="Repository URL" path={`${b}.repoUrl`} value={p.repoUrl} placeholder="https://" onChange={(v) => upd((x) => { x.repoUrl = v; })} />
+          </div>
+          <Field label="If no source is available, say why" path={`${b}.sourceNote`} max={L.sourceNote} value={p.sourceNote} onChange={(v) => upd((x) => { x.sourceNote = v; })} />
+          <div className="adm-row">
+            <button type="button" className="adm-btn" disabled={!canCapture || busy === "capture"} onClick={capture}><Icon name="image" size={15} />{busy === "capture" ? "Capturing…" : "Capture preview from live URL"}</button>
+            <span className="adm-muted adm-sm">{canCapture ? "Uses the screenshot as the cover image." : "Add a valid live demo URL first."}{p.coverCapturedAt ? ` Last captured ${p.coverCapturedAt}.` : ""}</span>
+          </div>
+        </Section>
+        <Section title="Cover image" desc="Shown on the project card and at the top of the page.">
+          <ImageField label="Cover" media={p.cover} alt={p.coverAlt} altPath={`${b}.coverAlt`}
+            onChange={(v) => upd((x) => { if (v.media !== x.cover) x.coverCapturedAt = ""; x.cover = v.media; x.coverAlt = v.alt; })} />
+        </Section>
+        <Section title="Screenshots" desc={`Up to ${L.images}. Drag to reorder.`}>
+          <SortableList name={`shots-${p.uid}`} items={p.images} idOf={(i) => i.uid} labelOf={(i) => i.alt || "screenshot"} onChange={(next) => upd((x) => { x.images = next; })}>
+            {({ item, index, handle, dragging, move }) => (
+              <ItemRow handle={handle} dragging={dragging} actions={
+                <RowMenu label={`screenshot ${index + 1}`} onUp={index > 0 ? () => move(-1) : undefined} onDown={index < p.images.length - 1 ? () => move(1) : undefined}
+                  onDelete={() => remove("screenshot", (d) => { const x = d.projects.find((q) => q.uid === p.uid); if (x) x.images = x.images.filter((q) => q.uid !== item.uid); })} />}>
+                <ImageField label={`Screenshot ${index + 1}`} media={item.media} alt={item.alt} altPath={`${b}.images.${item.uid}.alt`}
+                  onChange={(v) => upd((x) => { const i = x.images.find((q) => q.uid === item.uid); if (i) { i.media = v.media; i.alt = v.alt; } })} />
+              </ItemRow>
+            )}
+          </SortableList>
+          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" id={`shot-${p.uid}`} disabled={p.images.length >= L.images} onChange={(e) => addShot(e.target.files?.[0])} />
+          <label htmlFor={`shot-${p.uid}`} className="adm-btn" aria-disabled={p.images.length >= L.images} style={{ cursor: p.images.length >= L.images ? "default" : "pointer", opacity: p.images.length >= L.images ? 0.5 : 1 }}><Icon name="upload" size={15} />{busy === "shot" ? "Uploading…" : "Add screenshot"}</label>
+        </Section>
+      </TabPanel>
+    </>
+  );
+}
+
+export function ProjectsSection() {
+  const { c, set, remove, select } = useAdmin();
+  return (
     <MasterDetail<Project> section="projects" noun="project" items={c.projects} onChange={(next) => set((d) => { d.projects = next; })}
       titleOf={(p) => p.name} metaOf={(p) => p.category} visibleOf={(p) => p.visible}
       onAdd={() => { const uid = newUid(); set((d) => { d.projects.push({ uid, id: "new-project", name: "New project", category: "", summary: "", outcomeLine: "", status: "", featured: false, cover: "", coverAlt: "", coverCapturedAt: "", images: [], tech: [], scope: [], caseStudy: { ...EMPTY_CASE }, demoUrl: "", repoUrl: "", sourceNote: "", visible: false }); }); select("projects", uid); }}
       onDuplicate={(p) => { const uid = newUid(); set((d) => { d.projects.push({ ...structuredClone(p), uid, id: p.id + "-copy", name: p.name + " (copy)", visible: false, featured: false, images: p.images.map((i) => ({ ...i, uid: newUid() })) }); }); select("projects", uid); }}
       onDelete={(p) => remove(p.name || "project", (d) => { d.projects = d.projects.filter((x) => x.uid !== p.uid); })}
-      renderEditor={(p) => {
-        const b = `projects.${p.uid}`;
-        const canCapture = Boolean(p.demoUrl) && !checkUrl(p.demoUrl);
-        return (
-          <>
-            <div className="adm-editor-head"><h2>{p.name || "Untitled project"}</h2>
-              <div className="adm-row"><ToggleSwitch label="Featured on home" checked={p.featured} onChange={(v) => upd(p.uid, (x) => { x.featured = v; })} />
-                <VisibilitySwitch value={p.visible} onChange={(v) => upd(p.uid, (x) => { x.visible = v; })} /></div></div>
-            <div className="adm-grid">
-              <Field label="Name" path={`${b}.name`} max={L.projectName} value={p.name} onChange={(v) => upd(p.uid, (x) => { x.name = v; })} />
-              <Field label="URL slug" path={`${b}.id`} max={L.slug} value={p.id} hint="Used in the page address." onChange={(v) => upd(p.uid, (x) => { x.id = v; })} />
-              <Field label="Category" path={`${b}.category`} max={L.category} value={p.category} onChange={(v) => upd(p.uid, (x) => { x.category = v; })} />
-              <Field label="Status label (optional)" path={`${b}.status`} max={L.status} value={p.status} onChange={(v) => upd(p.uid, (x) => { x.status = v; })} />
-            </div>
-            <Field ai label="Summary" path={`${b}.summary`} max={L.summary} rows={3} value={p.summary} onChange={(v) => upd(p.uid, (x) => { x.summary = v; })} />
-            <Field label="One-line outcome (shown on the project card)" path={`${b}.outcomeLine`} max={L.outcomeLine} value={p.outcomeLine}
-              hint="Only a result you can stand behind. Leave empty if unsure." onChange={(v) => upd(p.uid, (x) => { x.outcomeLine = v; })} />
-
-            <Sub>Live link and preview</Sub>
-            <div className="adm-grid">
-              <Field label="Live demo URL" path={`${b}.demoUrl`} value={p.demoUrl} placeholder="https://" onChange={(v) => upd(p.uid, (x) => { x.demoUrl = v; })} />
-              <Field label="Repository URL" path={`${b}.repoUrl`} value={p.repoUrl} placeholder="https://" onChange={(v) => upd(p.uid, (x) => { x.repoUrl = v; })} />
-            </div>
-            <Field label="If no source is available, say why" path={`${b}.sourceNote`} max={L.sourceNote} value={p.sourceNote} onChange={(v) => upd(p.uid, (x) => { x.sourceNote = v; })} />
-            <div className="adm-row" style={{ marginBottom: ".8rem" }}>
-              <button type="button" className="adm-btn" disabled={!canCapture || busy === "capture"} onClick={() => capture(p)}>
-                <Icon name="image" size={15} />{busy === "capture" ? "Capturing…" : "Capture preview from live URL"}
-              </button>
-              <span className="adm-muted adm-sm">{canCapture ? "Takes a screenshot of the live page and uses it as the cover." : "Add a valid live demo URL first."}{p.coverCapturedAt ? ` Last captured ${p.coverCapturedAt}.` : ""}</span>
-            </div>
-            <ImageField label="Cover image" media={p.cover} alt={p.coverAlt} altPath={`${b}.coverAlt`}
-              onChange={(v) => upd(p.uid, (x) => { if (v.media !== x.cover) x.coverCapturedAt = ""; x.cover = v.media; x.coverAlt = v.alt; })} />
-
-            <div className="adm-grid">
-              <Field label="Technologies (one per line)" path={`${b}.tech`} rows={4} value={lines(p.tech)} hint={`Up to ${L.tech}.`} onChange={(v) => upd(p.uid, (x) => { x.tech = toLines(v); })} />
-              <Field label="Scope / features (one per line)" path={`${b}.scope`} rows={4} value={lines(p.scope)} hint="Keep only what is true." onChange={(v) => upd(p.uid, (x) => { x.scope = toLines(v); })} />
-            </div>
-            <Sub>Case study</Sub>
-            {(Object.keys(CASE_LABELS) as (keyof CaseStudy)[]).map((k) => (
-              <Field ai key={k} label={CASE_LABELS[k]} path={`${b}.caseStudy.${k}`} max={L.caseSection} rows={k === "decisions" ? 6 : 4} value={p.caseStudy[k]}
-                hint={k === "decisions" ? "Options considered, choice made, reason." : undefined} onChange={(v) => upd(p.uid, (x) => { x.caseStudy[k] = v; })} />
-            ))}
-            <Sub>Screenshots</Sub>
-            <SortableList name={`shots-${p.uid}`} items={p.images} idOf={(i) => i.uid} labelOf={(i) => i.alt || "screenshot"} onChange={(next) => upd(p.uid, (x) => { x.images = next; })}>
-              {({ item, index, handle, dragging, move }) => (
-                <ItemRow handle={handle} dragging={dragging} actions={
-                  <RowMenu label={`screenshot ${index + 1}`} onUp={index > 0 ? () => move(-1) : undefined} onDown={index < p.images.length - 1 ? () => move(1) : undefined}
-                    onDelete={() => remove("screenshot", (d) => { const x = d.projects.find((q) => q.uid === p.uid); if (x) x.images = x.images.filter((q) => q.uid !== item.uid); })} />}>
-                  <ImageField label={`Screenshot ${index + 1}`} media={item.media} alt={item.alt} altPath={`${b}.images.${item.uid}.alt`}
-                    onChange={(v) => upd(p.uid, (x) => { const i = x.images.find((q) => q.uid === item.uid); if (i) { i.media = v.media; i.alt = v.alt; } })} />
-                </ItemRow>
-              )}
-            </SortableList>
-            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" id={`shot-${p.uid}`} disabled={p.images.length >= L.images} onChange={(e) => addShot(p.uid, e.target.files?.[0])} />
-            <label htmlFor={`shot-${p.uid}`} className="adm-btn sm" aria-disabled={p.images.length >= L.images} style={{ cursor: p.images.length >= L.images ? "default" : "pointer", opacity: p.images.length >= L.images ? 0.5 : 1 }}>{busy === "shot" ? "Uploading…" : "Add screenshot"}</label>
-          </>
-        );
-      }} />
+      renderEditor={(p) => <ProjectEditor p={p} />} />
   );
 }
 
@@ -337,10 +354,10 @@ export function HowSection() {
   const upd = (uid: string, fn: (s: Step) => void) => set((d) => { const x = d.how.steps.find((q) => q.uid === uid); if (x) fn(x); });
   return (
     <>
-      <Card><Field ai label="Introduction" path="how.intro" max={L.howIntro} rows={2} value={c.how.intro} onChange={(v) => set((d) => { d.how.intro = v; })} /></Card>
+      <Section title="Introduction" desc="One line under the heading on the How I work page."><Field ai label="Introduction" path="how.intro" max={L.howIntro} rows={2} value={c.how.intro} onChange={(v) => set((d) => { d.how.intro = v; })} /></Section>
       <Sub>Live preview</Sub>
       <Note>This is how the diagram looks on your home page. Boxes arrange themselves from each step&apos;s “takes input from” choices. The “Let&apos;s talk” contact box is added automatically at the end.</Note>
-      {nodes.length ? <div className="adm-preview"><FlowGraph nodes={nodes} label="Preview" /></div> : <Card><span className="adm-muted">No steps yet.</span></Card>}
+      {nodes.length ? <div className="adm-preview"><Flow nodes={nodes} label="Preview" /></div> : <div className="adm-card adm-muted">No steps yet.</div>}
       <Sub>Steps</Sub>
       <SortableList name="how-steps" items={c.how.steps} idOf={(s) => s.uid} labelOf={(s) => s.title} onChange={(next) => set((d) => { d.how.steps = next; })}>
         {({ item, index, handle, dragging, move }) => {
@@ -434,31 +451,27 @@ export function ContactSection() {
   }
   return (
     <>
-      <Card>
-        <Sub>Contact form</Sub>
+      <Section title="Contact form" desc="Messages arrive in your Inbox.">
         <div className="adm-row" style={{ marginBottom: "1rem" }}><ToggleSwitch label="Show the contact form" checked={k.formEnabled} onChange={(v) => set((d) => { d.contact.formEnabled = v; })} /></div>
         <NumberField label="Keep messages for (days, 0 = forever)" path="contact.retentionDays" min={0} max={L.retentionMax} value={k.retentionDays}
           hint="Older messages are deleted automatically when you open the admin." onChange={(n) => set((d) => { d.contact.retentionDays = n; })} />
-      </Card>
-      <Card>
-        <Sub>Public details</Sub>
-        <Note>Only fields you fill in are shown. They appear on the Contact page, and beside your About text if you leave the switch below on.</Note>
+      </Section>
+      <Section title="Public details" desc="Only fields you fill in are shown. They appear on the Contact page, in the footer, and beside your About text.">
         <div className="adm-grid">
           <Field label="Email" path="contact.email" max={L.email} value={k.email} onChange={(v) => set((d) => { d.contact.email = v; })} />
           <Field label="GitHub URL" path="contact.github" value={k.github} placeholder="https://github.com/…" onChange={(v) => set((d) => { d.contact.github = v; })} />
           <Field label="LinkedIn URL" path="contact.linkedin" value={k.linkedin} placeholder="https://linkedin.com/in/…" onChange={(v) => set((d) => { d.contact.linkedin = v; })} />
         </div>
         <ToggleSwitch label="Show these on the About page" checked={k.showOnAbout} onChange={(v) => set((d) => { d.contact.showOnAbout = v; })} />
-      </Card>
-      <Card>
-        <Sub>Resume</Sub>
+      </Section>
+      <Section title="Resume" desc="A PDF visitors can download from the header and the home page.">
         <div className="adm-row" style={{ marginBottom: "1rem" }}>
           <input type="file" accept="application/pdf" className="sr-only" id="resume-file" onChange={(e) => pickResume(e.target.files?.[0])} />
           <label htmlFor="resume-file" className="adm-btn" style={{ cursor: "pointer" }}><Icon name="upload" size={15} />{busy ? "Uploading…" : "Upload resume (PDF, up to 4 MB)"}</label>
           {k.resumeUrl ? <button type="button" className="adm-btn danger sm" onClick={() => set((d) => { d.contact.resumeUrl = ""; })}>Remove</button> : null}
         </div>
         <Field label="Resume link" path="contact.resumeUrl" value={k.resumeUrl} placeholder="Upload a PDF above, or paste https://…" onChange={(v) => set((d) => { d.contact.resumeUrl = v; })} />
-      </Card>
+      </Section>
     </>
   );
 }
@@ -469,22 +482,16 @@ export function AssistantSection() {
   const a = c.site.ai;
   return (
     <>
-      {!aiOn ? (
-        <div className="adm-warn">The AI features need a Groq API key. Add <code>GROQ_API_KEY</code> to your environment variables (free at console.groq.com/keys), then redeploy. Nothing below has any effect until then.</div>
-      ) : null}
-      <Card>
-        <Sub>“Ask about my work” on your public site</Sub>
-        <Note>Visitors can ask questions and get answers written from your published pages only. It never sees hidden items or drafts, it is told not to guess, and every answer is labelled as AI-generated.</Note>
+      {!aiOn ? <div className="adm-warn">The AI features need a Groq API key. Add <code>GROQ_API_KEY</code> to your environment variables (free at console.groq.com/keys), then redeploy. Nothing below has any effect until then.</div> : null}
+      <Section title="“Ask about my work” on your site" desc="Visitors can ask questions and get answers written from your published pages only. It never sees hidden items or drafts, it is told not to guess, and every answer is labelled as AI-generated.">
         <ToggleSwitch label="Show the Ask AI button" checked={a.enabled} onChange={(v) => set((d) => { d.site.ai.enabled = v; })} />
         <div style={{ height: "1rem" }} />
         <Field label="Suggested questions (one per line)" path="site.ai.questions" rows={4} value={lines(a.questions)} hint={`Up to ${L.questions}, ${L.question} characters each. Shown as buttons before a visitor types.`}
           onChange={(v) => set((d) => { d.site.ai.questions = toLines(v); })} />
-      </Card>
-      <Card>
-        <Sub>Writing help in this admin</Sub>
-        <Note>When a key is set, text fields marked with a sparkle button can suggest a clearer version. You see the changes highlighted and choose whether to use them. Nothing is applied automatically.</Note>
-        <p className="adm-muted adm-sm">Visitors&apos; questions are sent to Groq to produce an answer and are not stored by this site. Rate limits apply to protect your free quota.</p>
-      </Card>
+      </Section>
+      <Section title="Writing help in this admin" desc="When a key is set, text fields with a sparkle button can suggest a clearer version. You see the changes highlighted and choose whether to use them. Nothing is applied automatically.">
+        <p className="adm-muted adm-sm" style={{ margin: 0 }}>Visitors&apos; questions are sent to Groq to produce an answer and are not stored by this site. Rate limits apply to protect your free quota.</p>
+      </Section>
     </>
   );
 }

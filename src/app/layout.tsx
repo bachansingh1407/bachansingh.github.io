@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Mulish } from "next/font/google";
+import { JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { MotionProvider } from "@/components/MotionProvider";
 import { cookies } from "next/headers";
 import { DEFAULT_CONTENT } from "@/lib/defaults";
 import { publishedOnce } from "@/lib/site";
@@ -7,11 +8,11 @@ import { isMode, themeCss } from "@/lib/themes";
 import type { Mode } from "@/lib/types";
 import "./globals.css";
 
-const sans = Mulish({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+const sans = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-sans", display: "swap" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000") };
+export const metadata: Metadata = { metadataBase: new URL(process.env.SITE_URL ?? "http://localhost:3000") };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 const CSS = themeCss();
@@ -31,7 +32,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
         <script dangerouslySetInnerHTML={{ __html: JS_FLAG }} />
       </head>
-      <body>{children}</body>
+      <body><MotionProvider>{children}</MotionProvider></body>
     </html>
   );
 }

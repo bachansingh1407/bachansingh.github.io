@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteShell } from "@/components/SiteShell";
 import { aiConfigured } from "@/lib/ai";
+import { contactRows } from "@/components/ContactLinks";
 import { formatUpdated, navFor, searchFor } from "@/lib/public";
 import { getPub, previewOnce } from "@/lib/site";
 
@@ -19,7 +20,8 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   const pub = await getPub();
   return (
     <SiteShell
-      nav={navFor(pub)} search={searchFor(pub)} name={pub.profile.name} role={pub.profile.role}
+      nav={navFor(pub)} search={searchFor(pub)} name={pub.profile.name} role={pub.profile.role} positioning={pub.profile.positioning}
+      links={contactRows(pub.contact).filter((r) => r.label !== "Resume").map((r) => ({ label: r.label, href: r.href }))}
       updated={formatUpdated(pub.publishedAt || pub.updated)} resumeHref={pub.contact.resumeUrl}
       palettes={pub.site.palettes} defaultPalette={pub.site.defaultPalette} defaultMode={pub.site.defaultMode}
       preview={await previewOnce()}

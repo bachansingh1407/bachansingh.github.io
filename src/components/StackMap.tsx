@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
 import { useId, useMemo, useState } from "react";
 import type { StackGroup } from "@/lib/types";
 import { BrandIcon } from "./Icon";
@@ -40,9 +41,11 @@ export function StackMap({ groups }: { groups: StackGroup[] }) {
               {g.items.map((i) => {
                 const body = (
                   <>
-                    <BrandIcon icon={i.icon} name={i.name} />
-                    <span className="tname">{i.name}</span>
-                    {i.description ? <span className="tdesc">{i.description}</span> : null}
+                    <span className="ticon"><BrandIcon icon={i.icon} name={i.name} size={26} /></span>
+                    <span className="ttext">
+                      <span className="tname">{i.name}</span>
+                      {i.description ? <span className="tdesc">{i.description}</span> : null}
+                    </span>
                     {hasNotes(i) ? <span className="tmore" aria-hidden="true">{open === i.uid ? "−" : "+"}</span> : null}
                   </>
                 );
@@ -52,8 +55,10 @@ export function StackMap({ groups }: { groups: StackGroup[] }) {
                 ) : <div key={i.uid} className="tile static">{body}</div>;
               })}
             </div>
+            <AnimatePresence initial={false}>
             {sel ? (
-              <div className="tdetail" id={`${uid}-${sel.uid}`} role="region" aria-label={`${sel.name} details`}>
+              <motion.div key={sel.uid} className="tdetail" id={`${uid}-${sel.uid}`} role="region" aria-label={`${sel.name} details`}
+                initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: [0.21, 0.47, 0.32, 0.98] }}>
                 <div className="tdetail-h"><BrandIcon icon={sel.icon} name={sel.name} size={30} /><h3>{sel.name}</h3>
                   <button className="adm-x" aria-label="Close details" onClick={() => setOpen(null)}>✕</button></div>
                 <dl>
@@ -61,8 +66,9 @@ export function StackMap({ groups }: { groups: StackGroup[] }) {
                   {sel.how ? <><dt>How I use it</dt><dd>{sel.how}</dd></> : null}
                   {sel.alternatives ? <><dt>Alternatives I considered</dt><dd>{sel.alternatives}</dd></> : null}
                 </dl>
-              </div>
+              </motion.div>
             ) : null}
+            </AnimatePresence>
           </section>
         );
       })}
