@@ -1,5 +1,6 @@
 import { L } from "./limits";
 import type { Content } from "./types";
+import { onNetlify } from "./store";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 export const aiConfigured = () => Boolean(process.env.GROQ_API_KEY);
@@ -13,7 +14,7 @@ export async function groq(messages: ChatMsg[], o: { maxTokens?: number; tempera
   const key = process.env.GROQ_API_KEY;
   if (!key) throw new AiError(503, "AI is not configured.");
   const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), process.env.NETLIFY ? 9_000 : 20_000); // Netlify functions stop at about 10 s
+  const timer = setTimeout(() => ctl.abort(), onNetlify() ? 9_000 : 20_000); // Netlify functions stop at about 10 s
   try {
     const res = await fetch(GROQ_URL, {
       method: "POST", signal: ctl.signal,

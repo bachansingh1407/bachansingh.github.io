@@ -4,10 +4,15 @@ import path from "path";
 /** Tiny key-value layer: local files in development, Netlify Blobs on Netlify. Keys use [A-Za-z0-9/_.-]. */
 const ROOT = process.env.CONTENT_DIR ? path.resolve(process.env.CONTENT_DIR) : path.join(process.cwd(), ".data");
 
+/** NETLIFY is only set at build time; deployed functions expose the Blobs context (or Lambda vars) instead. */
+export function onNetlify(): boolean {
+  return Boolean(process.env.NETLIFY || process.env.NETLIFY_BLOBS_CONTEXT || (globalThis as { netlifyBlobsContext?: unknown }).netlifyBlobsContext
+    || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT);
+}
 function mode(): "blobs" | "file" {
   const f = process.env.CONTENT_STORE;
   if (f === "blobs" || f === "file") return f;
-  return process.env.NETLIFY ? "blobs" : "file";
+  return onNetlify() ? "blobs" : "file";
 }
 const okKey = (k: string) => /^[A-Za-z0-9][A-Za-z0-9/_.-]*$/.test(k) && !k.includes("..");
 const file = (k: string) => {
