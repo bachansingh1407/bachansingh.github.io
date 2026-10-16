@@ -67,7 +67,7 @@ export function SiteShell(p: Props) {
   const contact = p.nav.find((n) => n.id === "contact");
   const actions = (
     <>
-      <button className="icon-btn" onClick={() => setSearching(true)} aria-label="Search (Ctrl K)"><Icon name="search" size={19} /></button>
+      {/* <button className="icon-btn" onClick={() => setSearching(true)} aria-label="Search (Ctrl K)"><Icon name="search" size={19} /></button> */}
       {p.resumeHref ? <a className="icon-btn" href={p.resumeHref} target="_blank" rel="noopener noreferrer" aria-label="Download resume" title="Resume"><Icon name="download" size={19} /></a> : null}
       <ThemePicker palettes={p.palettes} defaultPalette={p.defaultPalette} defaultMode={p.defaultMode} />
     </>
